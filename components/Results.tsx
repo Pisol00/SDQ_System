@@ -224,7 +224,7 @@ const Results: React.FC<ResultsProps> = ({
           <p className="text-gray-500 mb-4 text-sm sm:text-base">ยังไม่มีผลการประเมินในห้องนี้</p>
           <button
             onClick={() => setCurrentPage('students')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base cursor-pointer"
           >
             เริ่มประเมิน
           </button>

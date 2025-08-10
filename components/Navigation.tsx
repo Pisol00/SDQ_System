@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BarChart3, Users, ClipboardList, PieChart, BookOpen, ChevronDown, PlusCircle, Menu, X } from 'lucide-react';
+import { BarChart3, Users, ClipboardList, PieChart, ChevronDown, PlusCircle, Menu, X } from 'lucide-react';
 import { Classroom, PageType } from './types';
 
 interface NavigationProps {
@@ -147,7 +147,6 @@ const Navigation: React.FC<NavigationProps> = ({
                 onClick={() => setShowClassroomDropdown(!showClassroomDropdown)}
                 className="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-xl hover:from-blue-100 hover:to-indigo-100 transition-all duration-200 border border-blue-200 shadow-sm transform hover:scale-105 cursor-pointer"
               >
-                <BookOpen className="h-4 w-4" />
                 <span className="font-semibold">{getCurrentClassroom()?.name}</span>
                 <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${showClassroomDropdown ? 'rotate-180' : 'rotate-0'}`} />
               </button>
@@ -200,9 +199,6 @@ const Navigation: React.FC<NavigationProps> = ({
             <div className="flex items-center justify-between py-3">
               {/* Mobile Classroom Info */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="p-2 bg-blue-100 rounded-lg shrink-0">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
-                </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-gray-900 text-sm truncate">{getCurrentClassroom()?.name}</div>
                   <div className="text-xs text-gray-500">ปีการศึกษา {getCurrentClassroom()?.year}</div>
@@ -269,9 +265,6 @@ const Navigation: React.FC<NavigationProps> = ({
               {/* Current Classroom Info */}
               <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-blue-100 rounded-xl">
-                    <BookOpen className="h-6 w-6 text-blue-600" />
-                  </div>
                   <div>
                     <div className="font-semibold text-gray-900">{getCurrentClassroom()?.name}</div>
                     <div className="text-sm text-gray-600">ปีการศึกษา {getCurrentClassroom()?.year}</div>

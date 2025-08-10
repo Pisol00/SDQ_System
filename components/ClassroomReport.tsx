@@ -4,6 +4,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { Classroom, Student, Assessment, PageType } from './types';
+import { FileText } from 'lucide-react';
 
 interface ClassroomReportProps {
   getCurrentClassroom: () => Classroom;
@@ -115,11 +116,12 @@ const ClassroomReport: React.FC<ClassroomReportProps> = ({
           <p className="text-sm sm:text-base text-gray-700">สรุปผลการประเมิน SDQ ของนักเรียนในห้องเรียน</p>
         </div>
 
-        <div className="text-center py-8 sm:py-12">
-          <p className="text-gray-600 text-base sm:text-lg">ยังไม่มีข้อมูลการประเมินในห้องนี้</p>
+        <div className="text-center py-12">
+          <FileText className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-500 mb-4 text-sm sm:text-base">ยังไม่มีผลการประเมินในห้องนี้</p>
           <button
             onClick={() => setCurrentPage('students')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base cursor-pointer"
           >
             เริ่มประเมิน
           </button>

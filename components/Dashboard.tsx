@@ -147,7 +147,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="space-y-3 sm:space-y-4">
           <button
             onClick={() => setCurrentPage('students')}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
           >
             <Users className="h-4 w-4 sm:h-5 sm:w-5" />
             จัดการนักเรียน
@@ -155,7 +155,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           
           <button
             onClick={() => setCurrentPage('results')}
-            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
           >
             <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" />
             ดูผลประเมิน
@@ -163,7 +163,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           <button
             onClick={() => setCurrentPage('reports')}
-            className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
+            className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base cursor-pointer"
           >
             <PieChart className="h-4 w-4 sm:h-5 sm:w-5" />
             รายงานสรุป

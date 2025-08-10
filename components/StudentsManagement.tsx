@@ -125,7 +125,7 @@ const StudentsManagement: React.FC<StudentsManagementProps> = ({
               </div>
               <button
                 onClick={addStudent}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <PlusCircle className="h-4 w-4" />
                 เพิ่มนักเรียน
