@@ -60,8 +60,6 @@ export interface SDQInterpretations {
   totalDifficulties: string;
 }
 
-export type PageType = 'dashboard' | 'students' | 'assessment' | 'impact-assessment' | 'results' | 'reports' | 'student-history';
-
 export interface PreviewStudent {
   id: number;
   studentId: string;

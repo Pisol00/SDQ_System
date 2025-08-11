@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { BarChart3, Users, ClipboardList, PieChart, ChevronDown, PlusCircle, Menu, X, User } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
+import ClassroomDialog from './ClassroomDialog'; // เพิ่ม import นี้
 
 // Enhanced Logo Component with click to home
 const Logo = ({ onClick }: { onClick?: () => void }) => {
@@ -279,7 +280,12 @@ const ClassroomSelector = ({ pathname }: { pathname: string }) => {
 const Navigation: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const { getCurrentClassroom, setShowClassroomDialog } = useApp();
+  const { 
+    getCurrentClassroom, 
+    showClassroomDialog, // เพิ่ม state นี้
+    setShowClassroomDialog, // เพิ่ม setter นี้
+    addClassroom // เพิ่ม function นี้
+  } = useApp();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const navItems = [
@@ -309,9 +315,11 @@ const Navigation: React.FC = () => {
     try {
       localStorage.removeItem('authToken');
       sessionStorage.removeItem('authToken');
-    } catch {}
-    // ไปหน้า login
-    window.location.href = '/login';
+    } catch (error) {
+      console.warn('Could not clear auth data:', error);
+    }
+    // ไปหน้า login ด้วย router
+    router.push('/login');
   };
 
   // Handle escape key for all dropdowns
@@ -497,6 +505,14 @@ const Navigation: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Classroom Dialog - เพิ่มส่วนนี้ */}
+      {showClassroomDialog && (
+        <ClassroomDialog
+          onClose={() => setShowClassroomDialog(false)}
+          onAddClassroom={addClassroom}
+        />
       )}
     </>
   );

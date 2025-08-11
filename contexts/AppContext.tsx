@@ -83,23 +83,23 @@ interface AppContextType {
   currentClassroom: number;
   students: Student[];
   assessments: Assessment[];
-  
+
   // Current Assessment
   currentAssessment: Assessment | null;
   selectedStudent: Student | null;
-  
+
   // Excel Import
   excelFile: any;
   excelSheets: string[];
   selectedSheet: string;
   previewData: PreviewStudent[];
   isProcessingFile: boolean;
-  
+
   // Dialog States
   showImportDialog: boolean;
   showClassroomDialog: boolean;
   showClassroomDropdown: boolean;
-  
+
   // Actions
   setCurrentClassroom: (id: number) => void;
   addClassroom: (classroom: Omit<Classroom, 'id' | 'createdDate'>) => void;
@@ -108,19 +108,19 @@ interface AppContextType {
   saveAssessment: (assessment: Assessment) => void;
   setCurrentAssessment: (assessment: Assessment | null) => void;
   setSelectedStudent: (student: Student | null) => void;
-  
+
   // Excel Import Actions
   setExcelFile: (file: any) => void;
   setExcelSheets: (sheets: string[]) => void;
   setSelectedSheet: (sheet: string) => void;
   setPreviewData: (data: PreviewStudent[]) => void;
   setIsProcessingFile: (processing: boolean) => void;
-  
+
   // Dialog Actions
   setShowImportDialog: (show: boolean) => void;
   setShowClassroomDialog: (show: boolean) => void;
   setShowClassroomDropdown: (show: boolean) => void;
-  
+
   // Helper Functions
   getCurrentClassroom: () => Classroom;
   getClassroomStudents: () => Student[];
@@ -151,18 +151,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentClassroom, setCurrentClassroom] = useState<number>(1);
   const [students, setStudents] = useState<Student[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
-  
+
   // Current Assessment State
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  
+
   // Excel Import State
   const [excelFile, setExcelFile] = useState<any>(null);
   const [excelSheets, setExcelSheets] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState('');
   const [previewData, setPreviewData] = useState<PreviewStudent[]>([]);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
-  
+
   // Dialog States
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showClassroomDialog, setShowClassroomDialog] = useState(false);
@@ -287,6 +287,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel');
     } finally {
       setIsProcessingFile(false);
+      // Reset file input เพื่อให้สามารถเลือกไฟล์เดิมได้อีก
+      if (event.target) {
+        event.target.value = '';
+      }
     }
   };
 
@@ -317,6 +321,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSelectedSheet(sheetName);
     } catch (error) {
       console.error('Error previewing sheet data:', error);
+      alert('เกิดข้อผิดพลาดในการแสดงตัวอย่างข้อมูล');
     }
   };
 
@@ -352,17 +357,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const existingIds = students.map(s => s.studentId);
       const uniqueNewStudents = newStudents.filter(s => !existingIds.includes(s.studentId));
 
-      setStudents([...students, ...uniqueNewStudents]);
+      if (uniqueNewStudents.length === 0) {
+        alert('ไม่มีข้อมูลนักเรียนใหม่ที่ต้องนำเข้า (ข้อมูลทั้งหมดมีอยู่แล้ว)');
+      } else {
+        setStudents([...students, ...uniqueNewStudents]);
+        alert(`นำเข้าข้อมูลลงในห้อง ${getCurrentClassroom().name} สำเร็จ! เพิ่มนักเรียนใหม่ ${uniqueNewStudents.length} คน`);
+      }
+
+      // รีเซ็ตทุกอย่างหลังจากเสร็จสิ้น
       setShowImportDialog(false);
       setExcelFile(null);
       setExcelSheets([]);
       setSelectedSheet('');
       setPreviewData([]);
-
-      toast(`นำเข้าข้อมูลลงในห้อง ${getCurrentClassroom().name} สำเร็จ! เพิ่มนักเรียนใหม่ ${uniqueNewStudents.length} คน`);
     } catch (error) {
       console.error('Error importing students:', error);
-      toast('เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
+      alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล: ' + (error as Error).message);
     }
   };
 

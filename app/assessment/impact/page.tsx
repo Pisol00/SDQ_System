@@ -7,7 +7,13 @@ import { calculateScores, getInterpretation } from '../../../utils/sdqCalculatio
 
 const ImpactAssessmentPage: React.FC = () => {
   const router = useRouter();
-  const { currentAssessment, setCurrentAssessment, getCurrentClassroom, saveAssessment } = useApp();
+  const { 
+    currentAssessment, 
+    setCurrentAssessment, 
+    getCurrentClassroom,
+    saveAssessment 
+  } = useApp();
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showFollowUp, setShowFollowUp] = useState(false);
 

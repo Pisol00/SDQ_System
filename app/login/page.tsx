@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation'; // เพิ่ม import นี้
 import { BarChart3, Eye, EyeOff, User, Lock, AlertCircle } from 'lucide-react';
 
 interface LoginFormData {
@@ -15,6 +16,7 @@ interface FormErrors {
 }
 
 const LoginPage = () => {
+    const router = useRouter(); // เพิ่ม hook นี้
     const [formData, setFormData] = useState<LoginFormData>({
         username: '',
         password: ''
@@ -57,8 +59,15 @@ const LoginPage = () => {
 
             // Mock login validation
             if (formData.username === 'admin' && formData.password === 'password') {
-                // Redirect to dashboard or home page
-                window.location.href = '/';
+                // เก็บ token ใน localStorage (ถ้าจำเป็น)
+                try {
+                    localStorage.setItem('authToken', 'mock-jwt-token');
+                } catch (error) {
+                    console.warn('Could not save auth token:', error);
+                }
+                
+                // ใช้ router แทน window.location.href
+                router.push('/');
             } else {
                 setErrors({
                     general: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'

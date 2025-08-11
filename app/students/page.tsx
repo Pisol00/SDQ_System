@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlusCircle, Search, User, FileSpreadsheet } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import ImportDialog from '../../components/ImportDialog'; // เพิ่ม import นี้
 
 const StudentsPage: React.FC = () => {
   const router = useRouter();
@@ -13,7 +14,15 @@ const StudentsPage: React.FC = () => {
     startNewAssessment,
     assessments,
     isProcessingFile,
-    handleFileUpload
+    handleFileUpload,
+    // เพิ่ม states สำหรับ Excel import
+    showImportDialog,
+    setShowImportDialog,
+    excelSheets,
+    selectedSheet,
+    previewData,
+    previewSheetData,
+    importStudentsFromExcel
   } = useApp();
 
   const [newStudent, setNewStudent] = useState({ 
@@ -354,6 +363,19 @@ const StudentsPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Import Dialog - เพิ่มส่วนนี้ */}
+      {showImportDialog && (
+        <ImportDialog
+          onClose={() => setShowImportDialog(false)}
+          onImport={importStudentsFromExcel}
+          excelSheets={excelSheets}
+          selectedSheet={selectedSheet}
+          previewData={previewData}
+          onPreviewSheet={previewSheetData}
+          currentClassroom={currentClassroom}
+        />
+      )}
     </div>
   );
 };
