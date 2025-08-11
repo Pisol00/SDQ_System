@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Sarabun } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "../contexts/AppContext";
-import Navigation from "../components/Navigation";
+import LayoutContent from "../components/LayoutContent";
 
 const sarabun = Sarabun({
   weight: ['200', '300', '400', '500', '600', '700', '800'],
@@ -24,12 +24,9 @@ export default function RootLayout({
     <html lang="th">
       <body className={`${sarabun.variable} font-sarabun antialiased`}>
         <AppProvider>
-          <div className="min-h-screen bg-gray-50">
-            <Navigation />
-            <main>
-              {children}
-            </main>
-          </div>
+          <LayoutContent>
+            {children}
+          </LayoutContent>
         </AppProvider>
       </body>
     </html>
