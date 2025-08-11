@@ -102,7 +102,7 @@ interface AppContextType {
   // Actions
   setCurrentClassroom: (id: number) => void;
   addClassroom: (classroom: Omit<Classroom, 'id' | 'createdDate'>) => void;
-  addStudent: (student: Omit<Student, 'id' | 'classroomId' | 'createdDate'>) => void;
+  addStudent: (student: Omit<Student, 'id' | 'classroomId' | 'createdDate' | 'grade'>) => void;
   startNewAssessment: (student: Student) => void;
   saveAssessment: (assessment: Assessment) => void;
   setCurrentAssessment: (assessment: Assessment | null) => void;
@@ -230,7 +230,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setShowClassroomDialog(false);
   };
 
-  const addStudent = (studentData: Omit<Student, 'id' | 'classroomId' | 'createdDate'>) => {
+  const addStudent = (studentData: Omit<Student, 'id' | 'classroomId' | 'createdDate' | 'grade'>) => {
     const newStudent: Student = {
       id: Date.now(),
       ...studentData,
