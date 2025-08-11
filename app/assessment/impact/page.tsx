@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '../../../contexts/AppContext';
 import { impactQuestions } from '../../../constants/impactQuestion';
 import { calculateScores, getInterpretation } from '../../../utils/sdqCalculations';
+import { showToast } from '../../../utils/toast';
 
 const ImpactAssessmentPage: React.FC = () => {
   const router = useRouter();
@@ -33,11 +34,11 @@ const ImpactAssessmentPage: React.FC = () => {
     };
 
     const handlePopState = (e: PopStateEvent) => {
-      const confirmLeave = confirm('การประเมินยังไม่เสร็จสิ้น ต้องการออกจากหน้านี้หรือไม่?');
-      if (!confirmLeave) {
-        e.preventDefault();
-        window.history.pushState(null, '', window.location.href);
-      }
+      showToast.navConfirm(() => {
+        // ปล่อยให้ navigation เกิดขึ้น
+      });
+      e.preventDefault();
+      window.history.pushState(null, '', window.location.href);
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -132,6 +133,7 @@ const ImpactAssessmentPage: React.FC = () => {
     };
 
     saveAssessment(completedAssessment);
+    showToast.success('การประเมินเสร็จสิ้น กำลังไปยังหน้าผลการประเมิน');
     router.push('/results');
   };
 

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '../../contexts/AppContext';
 import { sdqQuestions, responseOptions } from '../../constants/sdqQuestions';
+import { toast } from 'sonner';
 
 const AssessmentPage: React.FC = () => {
   const router = useRouter();
@@ -25,11 +26,22 @@ const AssessmentPage: React.FC = () => {
     };
 
     const handlePopState = (e: PopStateEvent) => {
-      const confirmLeave = confirm('การประเมินยังไม่เสร็จสิ้น ต้องการออกจากหน้านี้หรือไม่?');
-      if (!confirmLeave) {
-        e.preventDefault();
-        window.history.pushState(null, '', window.location.href);
-      }
+      toast('การประเมินยังไม่เสร็จสิ้น', {
+        description: 'ต้องการออกจากหน้านี้หรือไม่?',
+        action: {
+          label: 'ออกจากหน้า',
+          onClick: () => {
+            // ปล่อยให้ navigation เกิดขึ้น
+          }
+        },
+        cancel: {
+          label: 'ยกเลิก',
+          onClick: () => {
+            e.preventDefault();
+            window.history.pushState(null, '', window.location.href);
+          }
+        }
+      });
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -73,6 +85,7 @@ const AssessmentPage: React.FC = () => {
   };
 
   const moveToImpactAssessment = () => {
+    toast.success('SDQ เสร็จสิ้น กำลังไปยังคำถามเพิ่มเติม');
     router.push('/assessment/impact');
   };
 

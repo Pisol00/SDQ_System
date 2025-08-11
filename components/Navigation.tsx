@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { BarChart3, Users, ClipboardList, PieChart, ChevronDown, PlusCircle, Menu, X, User } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import ClassroomDialog from './ClassroomDialog'; // เพิ่ม import นี้
+import ClassroomDialog from './ClassroomDialog';
+import { showToast } from '../utils/toast'; // เพิ่ม import นี้
 
 // Enhanced Logo Component with click to home
 const Logo = ({ onClick }: { onClick?: () => void }) => {
@@ -298,8 +299,11 @@ const Navigation: React.FC = () => {
   const handleNavigation = (path: string) => {
     // ป้องกันการนำทางระหว่าง assessment
     if (pathname.includes('/assessment') && path !== pathname) {
-      const confirmLeave = confirm('การประเมินยังไม่เสร็จสิ้น ต้องการออกจากหน้านี้หรือไม่?');
-      if (!confirmLeave) return;
+      showToast.navConfirm(() => {
+        router.push(path);
+        setShowMobileMenu(false);
+      });
+      return;
     }
     
     router.push(path);
@@ -311,15 +315,18 @@ const Navigation: React.FC = () => {
   };
 
   const handleLogout = () => {
-    // เคลียร์ข้อมูลผู้ใช้/โทเค็นตามที่ระบบ login ของคุณใช้
-    try {
-      localStorage.removeItem('authToken');
-      sessionStorage.removeItem('authToken');
-    } catch (error) {
-      console.warn('Could not clear auth data:', error);
-    }
-    // ไปหน้า login ด้วย router
-    router.push('/login');
+    showToast.logoutConfirm(() => {
+      // เคลียร์ข้อมูลผู้ใช้/โทเค็นตามที่ระบบ login ของคุณใช้
+      try {
+        localStorage.removeItem('authToken');
+        sessionStorage.removeItem('authToken');
+      } catch (error) {
+        console.warn('Could not clear auth data:', error);
+      }
+      // ไปหน้า login ด้วย router
+      router.push('/login');
+      showToast.success('ออกจากระบบเรียบร้อยแล้ว');
+    });
   };
 
   // Handle escape key for all dropdowns

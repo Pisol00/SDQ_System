@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation'; // เพิ่ม import นี้
+import { useRouter } from 'next/navigation';
 import { BarChart3, Eye, EyeOff, User, Lock, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface LoginFormData {
     username: string;
@@ -65,6 +66,11 @@ const LoginPage = () => {
                 } catch (error) {
                     console.warn('Could not save auth token:', error);
                 }
+                
+                // แสดง success toast
+                toast.success('เข้าสู่ระบบสำเร็จ!', {
+                    description: 'กำลังนำทางไปยังหน้าหลัก'
+                });
                 
                 // ใช้ router แทน window.location.href
                 router.push('/');
