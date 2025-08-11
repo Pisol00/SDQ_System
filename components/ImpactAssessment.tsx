@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { impactQuestions } from './constants/impactQuestion';
-import { Assessment, Classroom } from './types';
+import { impactQuestions } from '../constants/impactQuestion';
+import { Assessment, Classroom } from '../types';
 
 interface ImpactAssessmentProps {
   currentAssessment: Assessment;

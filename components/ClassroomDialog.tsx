@@ -15,7 +15,7 @@ const ClassroomDialog: React.FC<ClassroomDialogProps> = ({ onClose, onAddClassro
   const [newClassroom, setNewClassroom] = useState({ 
     name: '', 
     grade: '', 
-    section: '', 
+    section: '1', 
     year: '2567' 
   });
 
@@ -25,6 +25,14 @@ const ClassroomDialog: React.FC<ClassroomDialogProps> = ({ onClose, onAddClassro
       const classroomName = `${newClassroom.grade}/${newClassroom.section}`;
       onAddClassroom({ ...newClassroom, name: classroomName });
       setNewClassroom({ name: '', grade: '', section: '', year: '2567' });
+    }
+  };
+
+  const handleNumberInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // อนุญาตเฉพาะตัวเลข 0-9, Backspace, Delete, Tab, Enter, และ Arrow keys
+    if (!/[0-9]/.test(e.key) && 
+        !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.preventDefault();
     }
   };
 
@@ -50,7 +58,7 @@ const ClassroomDialog: React.FC<ClassroomDialogProps> = ({ onClose, onAddClassro
               <select
                 value={newClassroom.grade}
                 onChange={(e) => setNewClassroom({...newClassroom, grade: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base cursor-pointer"
+                className="text-slate-700 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base cursor-pointer"
                 required
               >
                 <option value="">เลือกชั้น</option>
@@ -63,11 +71,13 @@ const ClassroomDialog: React.FC<ClassroomDialogProps> = ({ onClose, onAddClassro
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">ห้อง</label>
               <input
-                type="text"
+                type="number"
                 value={newClassroom.section}
                 onChange={(e) => setNewClassroom({...newClassroom, section: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                onKeyDown={handleNumberInput}
+                className="text-slate-700 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
                 placeholder="เช่น 1, 2, 3..."
+                min="1"
                 required
               />
             </div>
@@ -75,11 +85,12 @@ const ClassroomDialog: React.FC<ClassroomDialogProps> = ({ onClose, onAddClassro
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">ปีการศึกษา</label>
               <input
-                type="text"
+                type="number"
                 value={newClassroom.year}
                 onChange={(e) => setNewClassroom({...newClassroom, year: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
-                placeholder="2567"
+                onKeyDown={handleNumberInput}
+                className="text-slate-700 w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                placeholder="2568"
               />
             </div>
 

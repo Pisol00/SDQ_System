@@ -1,399 +1,200 @@
-'use client'
-import React, { useState, useEffect } from 'react';
-import * as XLSX from 'xlsx';
+'use client';
+import React from 'react';
+import { useRouter } from 'next/navigation';
+import { Users, ClipboardList, BarChart3, Calendar, PieChart, AlertTriangle } from 'lucide-react';
+import { useApp } from '../contexts/AppContext';
 
-// Import types
-import {
-  Classroom,
-  Student,
-  Assessment,
-  PageType,
-  PreviewStudent
-} from '../components/types';
+const Dashboard: React.FC = () => {
+  const router = useRouter();
+  const { 
+    getCurrentClassroom, 
+    getClassroomStudents, 
+    getClassroomAssessments 
+  } = useApp();
 
-// Import utilities
-import { calculateScores, getInterpretation, calculateAge } from '../components/utils/sdqCalculations';
+  const classroomStudents = getClassroomStudents();
+  const classroomAssessments = getClassroomAssessments();
+  const currentClassroom = getCurrentClassroom();
 
-// Import components
-import Navigation from '../components/Navigation';
-import Dashboard from '../components/Dashboard';
-import StudentsManagement from '../components/StudentsManagement';
-import AssessmentPage from '../components/Assessment';
-import ImpactAssessment from '../components/ImpactAssessment';
-import Results from '../components/Results';
-import ClassroomReport from '../components/ClassroomReport';
-import ClassroomDialog from '../components/ClassroomDialog';
-import ImportDialog from '../components/ImportDialog';
-import ProgressLoading from '@/components/ProgressLoading';
+  // Calculate statistics
+  const needFollowUp = classroomAssessments.filter(a =>
+    a.interpretations?.totalDifficulties === 'มีปัญหา' ||
+    a.interpretations?.totalDifficulties === 'เส่ียง'
+  ).length;
 
-const SDQTeacherApp: React.FC = () => {
+  const thisMonth = classroomAssessments.filter(a =>
+    new Date(a.completedDate || '').getMonth() === new Date().getMonth()
+  ).length;
 
+  const recentAssessments = classroomAssessments.slice(-5).reverse();
 
-  // State management
-  const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
-  const [classrooms, setClassrooms] = useState<Classroom[]>([
-    { id: 1, name: 'ป.1/1', grade: 'ป.1', section: '1', year: '2567', createdDate: new Date().toISOString() }
-  ]);
-  const [currentClassroom, setCurrentClassroom] = useState<number>(1);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
-
-  // Dialog states
-  const [showImportDialog, setShowImportDialog] = useState(false);
-  const [showClassroomDialog, setShowClassroomDialog] = useState(false);
-  const [showClassroomDropdown, setShowClassroomDropdown] = useState(false);
-
-  // Excel import states
-  const [excelFile, setExcelFile] = useState<any>(null);
-  const [excelSheets, setExcelSheets] = useState<string[]>([]);
-  const [selectedSheet, setSelectedSheet] = useState('');
-  const [previewData, setPreviewData] = useState<PreviewStudent[]>([]);
-  const [isProcessingFile, setIsProcessingFile] = useState(false);
-
-  // Mobile responsiveness helpers
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Helper functions
-  const getCurrentClassroom = (): Classroom =>
-    classrooms.find(c => c.id === currentClassroom) || classrooms[0];
-
-  const getClassroomStudents = (): Student[] =>
-    students.filter(s => s.classroomId === currentClassroom);
-
-  const getClassroomAssessments = (): Assessment[] =>
-    assessments.filter(a => {
-      const student = students.find(s => s.id === a.studentId);
-      return student?.classroomId === currentClassroom;
-    });
-
-  // Enhanced page navigation with mobile optimization
-  const handlePageChange = (page: PageType) => {
-    setCurrentPage(page);
-    // Close any open dropdowns when changing pages
-    setShowClassroomDropdown(false);
-
-    // Scroll to top on page change for better mobile UX
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  // Classroom management
-  const addClassroom = (classroomData: Omit<Classroom, 'id' | 'createdDate'>) => {
-    const newClassroom: Classroom = {
-      id: Date.now(),
-      ...classroomData,
-      createdDate: new Date().toISOString()
-    };
-    setClassrooms([...classrooms, newClassroom]);
-    setCurrentClassroom(newClassroom.id);
-    setShowClassroomDialog(false);
-    handlePageChange('dashboard');
-  };
-
-  const switchClassroom = (classroomId: number) => {
-    setCurrentClassroom(classroomId);
-    setShowClassroomDropdown(false);
-    handlePageChange('dashboard');
-  };
-
-  // Student management
-  const addStudent = (studentData: Omit<Student, 'id' | 'classroomId' | 'createdDate'>) => {
-    const newStudent: Student = {
-      id: Date.now(),
-      ...studentData,
-      classroomId: currentClassroom,
-      createdDate: new Date().toISOString()
-    };
-    setStudents([...students, newStudent]);
-  };
-
-  // Assessment management
-  const startNewAssessment = (student: Student) => {
-    const newAssessment: Assessment = {
-      id: Date.now(),
-      studentId: student.id,
-      studentName: student.name,
-      classroomId: student.classroomId,
-      date: new Date().toISOString().split('T')[0],
-      responses: {},
-      impactResponses: { hasProblems: -1 },
-      completed: false
-    };
-    setCurrentAssessment(newAssessment);
-    handlePageChange('assessment');
-  };
-
-  const moveToImpactAssessment = () => {
-    if (!currentAssessment) return;
-    handlePageChange('impact-assessment');
-  };
-
-  const backToAssessment = () => {
-    handlePageChange('assessment');
-  };
-
-  const saveAssessment = () => {
-    if (!currentAssessment) return;
-
-    const scores = calculateScores(currentAssessment.responses);
-    const interpretations = getInterpretation(scores);
-
-    const completedAssessment: Assessment = {
-      ...currentAssessment,
-      scores,
-      interpretations,
-      completed: true,
-      completedDate: new Date().toISOString()
-    };
-
-    setAssessments([...assessments, completedAssessment]);
-    setCurrentAssessment(null);
-    handlePageChange('results');
-  };
-
-  // Excel file handling
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsProcessingFile(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, {
-        cellStyles: true,
-        cellFormula: true,
-        cellDates: true,
-        cellNF: true,
-        sheetStubs: true
-      });
-
-      setExcelFile(workbook);
-      setExcelSheets(workbook.SheetNames);
-      setShowImportDialog(true);
-    } catch (error) {
-      console.error('Error reading Excel file:', error);
-      alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel');
-    } finally {
-      setIsProcessingFile(false);
-    }
-  };
-
-  const previewSheetData = (sheetName: string) => {
-    if (!excelFile || !sheetName) return;
-
-    try {
-      const worksheet = excelFile.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-      const studentRows = jsonData.slice(3);
-      const preview: PreviewStudent[] = [];
-
-      studentRows.slice(0, 5).forEach((row: any, index: number) => {
-        if (row && row[0] && row[1] && row[5] && row[6]) {
-          preview.push({
-            id: Date.now() + index,
-            studentId: row[1]?.toString() || '',
-            name: `${row[5]} ${row[6]}`,
-            grade: sheetName.includes('6') ? 'ป.6' :
-              sheetName.includes('5') ? 'ป.5' :
-                sheetName.includes('4') ? 'ป.4' :
-                  sheetName.includes('3') ? 'ป.3' :
-                    sheetName.includes('2') ? 'ป.2' :
-                      sheetName.includes('1') ? 'ป.1' : 'ไม่ระบุ',
-            age: calculateAge(row[3]),
-            gender: row[8] === 1 ? 'ชาย' : row[9] === 1 ? 'หญิง' : 'ไม่ระบุ'
-          });
-        }
-      });
-
-      setPreviewData(preview);
-      setSelectedSheet(sheetName);
-    } catch (error) {
-      console.error('Error previewing sheet data:', error);
-    }
-  };
-
-  const importStudentsFromExcel = () => {
-    if (!excelFile || !selectedSheet) return;
-
-    try {
-      const worksheet = excelFile.Sheets[selectedSheet];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-      const studentRows = jsonData.slice(3);
-      const newStudents: Student[] = [];
-
-      studentRows.forEach((row: any, index: number) => {
-        if (row && row[0] && row[1] && row[5] && row[6]) {
-          const student: Student = {
-            id: Date.now() + index,
-            studentId: row[1]?.toString() || '',
-            name: `${row[5]} ${row[6]}`,
-            grade: selectedSheet.includes('6') ? 'ป.6' :
-              selectedSheet.includes('5') ? 'ป.5' :
-                selectedSheet.includes('4') ? 'ป.4' :
-                  selectedSheet.includes('3') ? 'ป.3' :
-                    selectedSheet.includes('2') ? 'ป.2' :
-                      selectedSheet.includes('1') ? 'ป.1' : 'ไม่ระบุ',
-            age: calculateAge(row[3]),
-            gender: row[8] === 1 ? 'ชาย' : row[9] === 1 ? 'หญิง' : 'ไม่ระบุ',
-            fullNameWithTitle: row[7] || `${row[4]} ${row[5]} ${row[6]}`,
-            birthDate: row[3],
-            citizenId: row[2],
-            classroomId: currentClassroom,
-            createdDate: new Date().toISOString()
-          };
-          newStudents.push(student);
-        }
-      });
-
-      const existingIds = students.map(s => s.studentId);
-      const uniqueNewStudents = newStudents.filter(s => !existingIds.includes(s.studentId));
-
-      setStudents([...students, ...uniqueNewStudents]);
-      setShowImportDialog(false);
-      setExcelFile(null);
-      setExcelSheets([]);
-      setSelectedSheet('');
-      setPreviewData([]);
-
-      alert(`นำเข้าข้อมูลลงในห้อง ${getCurrentClassroom().name} สำเร็จ! เพิ่มนักเรียนใหม่ ${uniqueNewStudents.length} คน`);
-    } catch (error) {
-      console.error('Error importing students:', error);
-      alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
-    }
-  };
-
-  const viewStudentHistory = (student: Student) => {
-    setSelectedStudent(student);
-    handlePageChange('student-history');
-  };
-
-  // Close dropdowns when clicking outside (mobile optimization)
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setShowClassroomDropdown(false);
-    };
-
-    if (showClassroomDropdown) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [showClassroomDropdown]);
+  const StatCard = ({ title, value, icon: Icon, bgColor, iconColor }: {
+    title: string;
+    value: number;
+    icon: React.ElementType;
+    bgColor: string;
+    iconColor: string;
+  }) => (
+    <div className={`${bgColor} border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-slate-600 text-sm font-medium mb-2">{title}</p>
+          <p className="text-2xl font-bold text-slate-800">{value}</p>
+        </div>
+        <Icon className={`h-8 w-8 ${iconColor}`} />
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden" style={{ fontFamily: "'Sarabun', sans-serif" }}>
-      <Navigation
-        currentPage={currentPage}
-        setCurrentPage={handlePageChange}
-        classrooms={classrooms}
-        currentClassroom={currentClassroom}
-        showClassroomDropdown={showClassroomDropdown}
-        setShowClassroomDropdown={setShowClassroomDropdown}
-        switchClassroom={switchClassroom}
-        setShowClassroomDialog={setShowClassroomDialog}
-      />
+    <div className="bg-gray-50 min-h-screen">
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="bg-white rounded-lg border border-slate-200  p-6">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-800 mb-2">
+                  ระบบประเมิน SDQ
+                </h1>
+                <p className="text-slate-600">แบบประเมินพฤติกรรมนักเรียน (SDQ) ฉบับครูประเมินนักเรียน</p>
+              </div>
+              <div className="text-left lg:text-right">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-1 mb-1">
+                    <p className="text-sm text-slate-600">ห้องเรียนปัจจุบัน </p>
+                    <p className="text-sm text-blue-700">{currentClassroom.name}</p>
+                  </div>
+                  <p className="text-sm text-slate-600">ปีการศึกษา {currentClassroom.year}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Main Content Area with proper mobile spacing */}
-      <main className="relative">
-        {currentPage === 'dashboard' && (
-          <Dashboard
-            getCurrentClassroom={getCurrentClassroom}
-            getClassroomStudents={getClassroomStudents}
-            getClassroomAssessments={getClassroomAssessments}
-            setCurrentPage={handlePageChange}
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="นักเรียนในห้อง"
+            value={classroomStudents.length}
+            icon={Users}
+            bgColor="bg-white"
+            iconColor="text-blue-600"
           />
-        )}
 
-        {currentPage === 'students' && (
-          <StudentsManagement
-            getCurrentClassroom={getCurrentClassroom}
-            getClassroomStudents={getClassroomStudents}
-            onAddStudent={addStudent}
-            onStartAssessment={startNewAssessment}
-            onViewStudentHistory={viewStudentHistory}
-            assessments={assessments}
-            isProcessingFile={isProcessingFile}
-            onFileUpload={handleFileUpload}
+          <StatCard
+            title="การประเมินเสร็จแล้ว"
+            value={classroomAssessments.length}
+            icon={ClipboardList}
+            bgColor="bg-white"
+            iconColor="text-green-600"
           />
-        )}
 
-        {currentPage === 'assessment' && currentAssessment && (
-          <AssessmentPage
-            currentAssessment={currentAssessment}
-            setCurrentAssessment={setCurrentAssessment}
-            getCurrentClassroom={getCurrentClassroom}
-            onMoveToImpactAssessment={moveToImpactAssessment}
+          <StatCard
+            title="ต้องติดตาม"
+            value={needFollowUp}
+            icon={AlertTriangle}
+            bgColor="bg-white"
+            iconColor="text-orange-600"
           />
-        )}
 
-        {currentPage === 'impact-assessment' && currentAssessment && (
-          <ImpactAssessment
-            currentAssessment={currentAssessment}
-            setCurrentAssessment={setCurrentAssessment}
-            getCurrentClassroom={getCurrentClassroom}
-            onSaveAssessment={saveAssessment}
-            onBackToAssessment={backToAssessment}
+          <StatCard
+            title="เดือนนี้"
+            value={thisMonth}
+            icon={Calendar}
+            bgColor="bg-white"
+            iconColor="text-purple-600"
           />
-        )}
+        </div>
 
-        {currentPage === 'results' && (
-          <Results
-            getClassroomAssessments={getClassroomAssessments}
-            getCurrentClassroom={getCurrentClassroom}
-            setCurrentPage={handlePageChange}
-          />
-        )}
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Recent Assessments - ขยายให้เต็มความกว้าง */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg border border-slate-200  p-6">
+              <h2 className="text-lg font-semibold text-slate-800 mb-6">
+                การประเมินล่าสุดในห้อง {currentClassroom.name}
+              </h2>
 
-        {currentPage === 'reports' && (
-          <ClassroomReport
-            getCurrentClassroom={getCurrentClassroom}
-            getClassroomStudents={getClassroomStudents}
-            getClassroomAssessments={getClassroomAssessments}
-            setCurrentPage={handlePageChange}
-          />
-        )}
-      </main>
+              {classroomAssessments.length === 0 ? (
+                <div className="text-center py-12">
+                  <ClipboardList className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-500 text-lg mb-2">ยังไม่มีการประเมินในห้องนี้</p>
+                  <p className="text-slate-400 text-sm">เริ่มต้นด้วยการเพิ่มนักเรียนและทำการประเมิน</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentAssessments.map((assessment) => (
+                    <div
+                      key={assessment.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors duration-200"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-slate-800 mb-1">{assessment.studentName}</p>
+                        <p className="text-sm text-slate-600">
+                          {new Date(assessment.completedDate || '').toLocaleDateString('th-TH', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                      <div className="text-left sm:text-right flex-shrink-0 mt-3 sm:mt-0">
+                        <p className="text-sm font-medium text-slate-700 mb-2">
+                          คะแนนรวม: {assessment.scores?.totalDifficulties}
+                        </p>
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${assessment.interpretations?.totalDifficulties === 'ปกติ' ? 'bg-green-100 text-green-800' :
+                          assessment.interpretations?.totalDifficulties === 'เส่ียง' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                          {assessment.interpretations?.totalDifficulties}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
-      {/* Modal Dialogs */}
-      {showImportDialog && (
-        <ImportDialog
-          onClose={() => setShowImportDialog(false)}
-          onImport={importStudentsFromExcel}
-          excelSheets={excelSheets}
-          selectedSheet={selectedSheet}
-          previewData={previewData}
-          onPreviewSheet={previewSheetData}
-          currentClassroom={getCurrentClassroom()}
-        />
-      )}
+          {/* Action Buttons - ลดขนาดลง */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg border border-slate-200  p-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                การจัดการ
+              </h3>
 
-      {showClassroomDialog && (
-        <ClassroomDialog
-          onClose={() => setShowClassroomDialog(false)}
-          onAddClassroom={addClassroom}
-        />
-      )}
+              <div className="space-y-3">
+                <button
+                  onClick={() => router.push('/students')}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium cursor-pointer"
+                >
+                  <Users className="h-5 w-5" />
+                  จัดการนักเรียน
+                </button>
 
-      {/* Loading overlay for better mobile feedback */}
-      {isProcessingFile && (
-        <ProgressLoading message="กำลังประมวลผลไฟล์ Excel..." />
-      )}
+                <button
+                  onClick={() => router.push('/results')}
+                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium cursor-pointer"
+                >
+                  <BarChart3 className="h-5 w-5" />
+                  ดูผลประเมิน
+                </button>
+
+                <button
+                  onClick={() => router.push('/reports')}
+                  className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium cursor-pointer"
+                >
+                  <PieChart className="h-5 w-5" />
+                  รายงานสรุป
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default SDQTeacherApp;
+export default Dashboard;

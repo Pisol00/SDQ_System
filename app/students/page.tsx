@@ -1,28 +1,21 @@
+'use client';
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PlusCircle, Search, User, FileSpreadsheet } from 'lucide-react';
-import { Student, Classroom, Assessment } from '../types';
+import { useApp } from '../../contexts/AppContext';
 
-interface StudentsManagementProps {
-  getCurrentClassroom: () => Classroom;
-  getClassroomStudents: () => Student[];
-  onAddStudent: (student: Omit<Student, 'id' | 'classroomId' | 'createdDate'>) => void;
-  onStartAssessment: (student: Student) => void;
-  onViewStudentHistory: (student: Student) => void;
-  assessments: Assessment[];
-  isProcessingFile: boolean;
-  onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}
+const StudentsPage: React.FC = () => {
+  const router = useRouter();
+  const {
+    getCurrentClassroom,
+    getClassroomStudents,
+    addStudent,
+    startNewAssessment,
+    assessments,
+    isProcessingFile,
+    handleFileUpload
+  } = useApp();
 
-const StudentsManagement: React.FC<StudentsManagementProps> = ({
-  getCurrentClassroom,
-  getClassroomStudents,
-  onAddStudent,
-  onStartAssessment,
-  onViewStudentHistory,
-  assessments,
-  isProcessingFile,
-  onFileUpload
-}) => {
   const [newStudent, setNewStudent] = useState({ 
     name: '', 
     studentId: '', 
@@ -34,13 +27,10 @@ const StudentsManagement: React.FC<StudentsManagementProps> = ({
   const classroomStudents = getClassroomStudents();
   const currentClassroom = getCurrentClassroom();
 
-  const addStudent = () => {
+  const handleAddStudent = () => {
     if (newStudent.name && newStudent.studentId) {
-      onAddStudent({
-        ...newStudent,
-        grade: currentClassroom.name // ใช้ name แทน grade เพื่อได้ "ป.1/1"
-      });
-      setNewStudent({ name: '', studentId: '', age: '' }); // ไม่ต้อง reset grade
+      addStudent(newStudent);
+      setNewStudent({ name: '', studentId: '', age: '' });
       setShowAddForm(false);
     }
   };
@@ -50,8 +40,18 @@ const StudentsManagement: React.FC<StudentsManagementProps> = ({
     student.studentId.includes(searchTerm)
   );
 
-  const hasStudentHistory = (student: Student) => {
+  const hasStudentHistory = (student: any) => {
     return assessments.some(a => a.studentId === student.id);
+  };
+
+  const handleStartAssessment = (student: any) => {
+    startNewAssessment(student);
+    router.push('/assessment');
+  };
+
+  const handleViewStudentHistory = (student: any) => {
+    // Navigate to results with student filter
+    router.push(`/results?student=${student.id}`);
   };
 
   return (
@@ -137,7 +137,7 @@ const StudentsManagement: React.FC<StudentsManagementProps> = ({
                 </div>
                 
                 <button
-                  onClick={addStudent}
+                  onClick={handleAddStudent}
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium cursor-pointer"
                 >
                   <PlusCircle className="h-4 w-4" />
@@ -150,7 +150,7 @@ const StudentsManagement: React.FC<StudentsManagementProps> = ({
                   <input
                     type="file"
                     accept=".xlsx,.xls"
-                    onChange={onFileUpload}
+                    onChange={handleFileUpload}
                     className="hidden"
                     id="excel-upload"
                     disabled={isProcessingFile}
@@ -267,14 +267,14 @@ const StudentsManagement: React.FC<StudentsManagementProps> = ({
                               <td className="py-4 px-4">
                                 <div className="flex justify-end gap-2">
                                   <button
-                                    onClick={() => onStartAssessment(student)}
+                                    onClick={() => handleStartAssessment(student)}
                                     className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors font-medium"
                                   >
                                     ประเมิน
                                   </button>
                                   {hasStudentHistory(student) && (
                                     <button
-                                      onClick={() => onViewStudentHistory(student)}
+                                      onClick={() => handleViewStudentHistory(student)}
                                       className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors font-medium"
                                     >
                                       ประวัติ
@@ -331,14 +331,14 @@ const StudentsManagement: React.FC<StudentsManagementProps> = ({
                         
                         <div className="flex gap-2">
                           <button
-                            onClick={() => onStartAssessment(student)}
+                            onClick={() => handleStartAssessment(student)}
                             className="flex-1 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
                           >
                             ประเมิน SDQ
                           </button>
                           {hasStudentHistory(student) && (
                             <button
-                              onClick={() => onViewStudentHistory(student)}
+                              onClick={() => handleViewStudentHistory(student)}
                               className="flex-1 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
                             >
                               ดูประวัติ
@@ -358,4 +358,4 @@ const StudentsManagement: React.FC<StudentsManagementProps> = ({
   );
 };
 
-export default StudentsManagement;
+export default StudentsPage;

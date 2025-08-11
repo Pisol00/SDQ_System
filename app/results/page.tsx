@@ -1,23 +1,26 @@
-import React, { useState } from 'react';
+'use client';
+import React, { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FileText, ArrowLeft } from 'lucide-react';
-import { Assessment, Classroom, PageType } from '../types';
-import { impactQuestions } from '../constants/impactQuestion';
-import ScoreCard from './ScoreCard';
+import { useApp } from '../../contexts/AppContext';
+import { Assessment } from '../../contexts/AppContext';
+import { impactQuestions } from '../../constants/impactQuestion';
+import ScoreCard from '../../components/ScoreCard';
 
-interface ResultsProps {
-  getClassroomAssessments: () => Assessment[];
-  getCurrentClassroom: () => Classroom;
-  setCurrentPage: (page: PageType) => void;
-}
-
-const Results: React.FC<ResultsProps> = ({
-  getClassroomAssessments,
-  getCurrentClassroom,
-  setCurrentPage
-}) => {
+const ResultsPage: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { getClassroomAssessments, getCurrentClassroom } = useApp();
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
+  
   const classroomAssessments = getClassroomAssessments();
   const currentClassroom = getCurrentClassroom();
+  
+  // Filter by student if specified in URL
+  const studentFilter = searchParams.get('student');
+  const filteredAssessments = studentFilter 
+    ? classroomAssessments.filter(a => a.studentId.toString() === studentFilter)
+    : classroomAssessments;
 
   const RecommendationCard = ({ interpretation, type }: { interpretation: string; type: string }) => {
     if (interpretation === 'มีปัญหา') {
@@ -236,7 +239,14 @@ const Results: React.FC<ResultsProps> = ({
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div>
                 <h1 className="text-3xl font-bold text-slate-800 mb-2">ผลการประเมิน SDQ</h1>
-                <p className="text-slate-600">รายการผลการประเมินในห้อง {currentClassroom.name}</p>
+                <p className="text-slate-600">
+                  รายการผลการประเมินในห้อง {currentClassroom.name}
+                  {studentFilter && (
+                    <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                      กรองตามนักเรียน
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="text-left lg:text-right">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -252,23 +262,51 @@ const Results: React.FC<ResultsProps> = ({
         </div>
 
         {/* Content */}
-        {classroomAssessments.length === 0 ? (
+        {filteredAssessments.length === 0 ? (
           <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow duration-200">
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <p className="text-slate-500 text-lg mb-2">ยังไม่มีผลการประเมินในห้องนี้</p>
+              <p className="text-slate-500 text-lg mb-2">
+                {studentFilter ? 'ไม่พบผลการประเมินของนักเรียนคนนี้' : 'ยังไม่มีผลการประเมินในห้องนี้'}
+              </p>
               <p className="text-slate-400 text-sm mb-4">เริ่มต้นด้วยการเพิ่มนักเรียนและทำการประเมิน</p>
-              <button
-                onClick={() => setCurrentPage('students')}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base cursor-pointer"
-              >
-                เริ่มประเมิน
-              </button>
+              <div className="flex gap-3 justify-center">
+                {studentFilter && (
+                  <button
+                    onClick={() => router.push('/results')}
+                    className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm cursor-pointer"
+                  >
+                    ดูทั้งหมด
+                  </button>
+                )}
+                <button
+                  onClick={() => router.push('/students')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer"
+                >
+                  เริ่มประเมิน
+                </button>
+              </div>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
-            {classroomAssessments.map((assessment) => (
+            {studentFilter && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-blue-800 text-sm">
+                    กำลังแสดงผลการประเมินของนักเรียน 1 คน
+                  </p>
+                  <button
+                    onClick={() => router.push('/results')}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    ดูทั้งหมด
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {filteredAssessments.map((assessment) => (
               <div key={assessment.id} className="bg-white p-6 rounded-lg border border-slate-200 hover:shadow-md transition-shadow duration-200">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="min-w-0 flex-1">
@@ -315,4 +353,4 @@ const Results: React.FC<ResultsProps> = ({
   );
 };
 
-export default Results;
+export default ResultsPage;

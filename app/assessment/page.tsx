@@ -1,21 +1,53 @@
-import React, { useState } from 'react';
-import { sdqQuestions, responseOptions } from '../constants/sdqQuestions';
-import { Assessment, Classroom } from '../types';
+'use client';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useApp } from '../../contexts/AppContext';
+import { sdqQuestions, responseOptions } from '../../constants/sdqQuestions';
 
-interface AssessmentPageProps {
-  currentAssessment: Assessment;
-  setCurrentAssessment: (assessment: Assessment) => void;
-  getCurrentClassroom: () => Classroom;
-  onMoveToImpactAssessment: () => void;
-}
-
-const AssessmentPage: React.FC<AssessmentPageProps> = ({
-  currentAssessment,
-  setCurrentAssessment,
-  getCurrentClassroom,
-  onMoveToImpactAssessment
-}) => {
+const AssessmentPage: React.FC = () => {
+  const router = useRouter();
+  const { currentAssessment, setCurrentAssessment, getCurrentClassroom } = useApp();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  // Redirect if no current assessment
+  useEffect(() => {
+    if (!currentAssessment) {
+      router.push('/students');
+      return;
+    }
+  }, [currentAssessment, router]);
+
+  // Prevent navigation away from assessment
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'การประเมินยังไม่เสร็จสิ้น ข้อมูลอาจสูญหาย';
+    };
+
+    const handlePopState = (e: PopStateEvent) => {
+      const confirmLeave = confirm('การประเมินยังไม่เสร็จสิ้น ต้องการออกจากหน้านี้หรือไม่?');
+      if (!confirmLeave) {
+        e.preventDefault();
+        window.history.pushState(null, '', window.location.href);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+    
+    // Add state to prevent back navigation
+    window.history.pushState(null, '', window.location.href);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  if (!currentAssessment) {
+    return null; // Will redirect
+  }
+
   const currentQuestion = sdqQuestions[currentQuestionIndex];
   
   const handleResponse = (value: number) => {
@@ -38,6 +70,10 @@ const AssessmentPage: React.FC<AssessmentPageProps> = ({
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
     }
+  };
+
+  const moveToImpactAssessment = () => {
+    router.push('/assessment/impact');
   };
 
   const isLastQuestion = currentQuestionIndex === sdqQuestions.length - 1;
@@ -130,7 +166,7 @@ const AssessmentPage: React.FC<AssessmentPageProps> = ({
 
             {isLastQuestion ? (
               <button
-                onClick={onMoveToImpactAssessment}
+                onClick={moveToImpactAssessment}
                 disabled={!canFinish}
                 className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
