@@ -91,7 +91,10 @@ const ResultsPage: React.FC = () => {
                       <p className="text-sm text-slate-600">ห้องเรียนปัจจุบัน </p>
                       <p className="text-sm text-blue-700">{currentClassroom.name}</p>
                     </div>
-                    <p className="text-sm text-slate-600">ปีการศึกษา {currentClassroom.year}</p>
+                                      <div className="flex items-center gap-1 justify-end">
+                    <p className="text-sm text-slate-600">ปีการศึกษา</p>
+                    <p className="text-sm text-blue-700">{currentClassroom.year}</p>
+                  </div>
                   </div>
                 </div>
               </div>
@@ -254,7 +257,10 @@ const ResultsPage: React.FC = () => {
                     <p className="text-sm text-slate-600">ห้องเรียนปัจจุบัน </p>
                     <p className="text-sm text-blue-700">{currentClassroom.name}</p>
                   </div>
-                  <p className="text-sm text-slate-600">ปีการศึกษา {currentClassroom.year}</p>
+                                    <div className="flex items-center gap-1 justify-end">
+                    <p className="text-sm text-slate-600">ปีการศึกษา</p>
+                    <p className="text-sm text-blue-700">{currentClassroom.year}</p>
+                  </div>
                 </div>
               </div>
             </div>

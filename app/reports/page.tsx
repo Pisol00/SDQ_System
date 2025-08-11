@@ -1,17 +1,19 @@
 'use client';
 import React, { useMemo } from 'react';
-import { 
+import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer
 } from 'recharts';
 import { FileText } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const ReportsPage: React.FC = () => {
-  const { 
-    getCurrentClassroom, 
-    getClassroomStudents, 
-    getClassroomAssessments 
+  const router = useRouter();
+  const {
+    getCurrentClassroom,
+    getClassroomStudents,
+    getClassroomAssessments
   } = useApp();
 
   const currentClassroom = getCurrentClassroom();
@@ -41,7 +43,7 @@ const ReportsPage: React.FC = () => {
         if (assessment.interpretations && assessment.scores) {
           // นับคะแนนรวม
           totalDifficultiesCount[assessment.interpretations.totalDifficulties as keyof typeof totalDifficultiesCount]++;
-          
+
           // นับแต่ละด้าน (4 ด้านหลัก)
           categoryCount.emotional[assessment.interpretations.emotional as keyof typeof categoryCount.emotional]++;
           categoryCount.conduct[assessment.interpretations.conduct as keyof typeof categoryCount.conduct]++;
@@ -121,7 +123,10 @@ const ReportsPage: React.FC = () => {
                       <p className="text-sm text-slate-600">ห้องเรียนปัจจุบัน </p>
                       <p className="text-sm text-blue-700">{currentClassroom.name}</p>
                     </div>
-                    <p className="text-sm text-slate-600">ปีการศึกษา {currentClassroom.year}</p>
+                    <div className="flex items-center gap-1 justify-end">
+                      <p className="text-sm text-slate-600">ปีการศึกษา</p>
+                      <p className="text-sm text-blue-700">{currentClassroom.year}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -134,8 +139,8 @@ const ReportsPage: React.FC = () => {
               <p className="text-slate-500 text-lg mb-2">ยังไม่มีผลการประเมินในห้องนี้</p>
               <p className="text-slate-400 text-sm mb-4">เริ่มต้นด้วยการเพิ่มนักเรียนและทำการประเมิน</p>
               <button
-                onClick={() => window.location.href = '/students'}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base cursor-pointer"
+                onClick={() => router.push('/students')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer"
               >
                 เริ่มประเมิน
               </button>
@@ -163,7 +168,10 @@ const ReportsPage: React.FC = () => {
                     <p className="text-sm text-slate-600">ห้องเรียนปัจจุบัน </p>
                     <p className="text-sm text-blue-700">{currentClassroom.name}</p>
                   </div>
-                  <p className="text-sm text-slate-600">ปีการศึกษา {currentClassroom.year}</p>
+                  <div className="flex items-center gap-1 justify-end">
+                    <p className="text-sm text-slate-600">ปีการศึกษา</p>
+                    <p className="text-sm text-blue-700">{currentClassroom.year}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -198,23 +206,23 @@ const ReportsPage: React.FC = () => {
           <ResponsiveContainer width="100%" height={250} className="sm:!h-[350px]">
             <BarChart data={categoryBarData} margin={{ top: 10, right: 15, left: 15, bottom: 30 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="name" 
+              <XAxis
+                dataKey="name"
                 axisLine={true}
                 tickLine={true}
                 tick={{ fill: '#374151', fontSize: 10 }}
                 className="sm:text-xs"
               />
-              <YAxis 
+              <YAxis
                 label={{ value: 'จำนวน', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#374151', fontSize: 10 } }}
                 axisLine={true}
                 tickLine={true}
                 tick={{ fill: '#374151', fontSize: 10 }}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#ffffff', 
-                  border: '1px solid #d1d5db', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #d1d5db',
                   borderRadius: '6px',
                   color: '#374151',
                   fontSize: '12px'
@@ -226,7 +234,7 @@ const ReportsPage: React.FC = () => {
               <Bar dataKey="มีปัญหา" fill="#ef4444" name="มีปัญหา" />
             </BarChart>
           </ResponsiveContainer>
-          
+
           {/* ตารางข้อมูล - แสดงแบบ compact บนมือถือ */}
           <div className="mt-6">
             <div className="block sm:hidden">
@@ -249,7 +257,7 @@ const ReportsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* มุมมองเดสก์ท็อป - ตารางเต็ม */}
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full border-collapse border border-slate-400">
@@ -298,22 +306,22 @@ const ReportsPage: React.FC = () => {
           <ResponsiveContainer width="100%" height={200} className="sm:!h-[300px]">
             <BarChart data={summaryBarData} margin={{ top: 10, right: 15, left: 15, bottom: 30 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
+              <XAxis
                 dataKey="name"
                 axisLine={true}
                 tickLine={true}
                 tick={{ fill: '#374151', fontSize: 10 }}
               />
-              <YAxis 
+              <YAxis
                 label={{ value: 'จำนวน', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#374151', fontSize: 10 } }}
                 axisLine={true}
                 tickLine={true}
                 tick={{ fill: '#374151', fontSize: 10 }}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#ffffff', 
-                  border: '1px solid #d1d5db', 
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #d1d5db',
                   borderRadius: '6px',
                   color: '#374151',
                   fontSize: '12px'
@@ -342,7 +350,7 @@ const ReportsPage: React.FC = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* มุมมองเดสก์ท็อป - ตารางเต็ม */}
             <div className="hidden sm:block">
               <table className="w-full border-collapse border border-slate-400">

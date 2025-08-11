@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as XLSX from 'xlsx';
 import { calculateAge } from '../utils/sdqCalculations';
+import { toast } from 'sonner';
 
 // Types
 export interface Classroom {
@@ -358,10 +359,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setSelectedSheet('');
       setPreviewData([]);
 
-      alert(`นำเข้าข้อมูลลงในห้อง ${getCurrentClassroom().name} สำเร็จ! เพิ่มนักเรียนใหม่ ${uniqueNewStudents.length} คน`);
+      toast(`นำเข้าข้อมูลลงในห้อง ${getCurrentClassroom().name} สำเร็จ! เพิ่มนักเรียนใหม่ ${uniqueNewStudents.length} คน`);
     } catch (error) {
       console.error('Error importing students:', error);
-      alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
+      toast('เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
     }
   };
 

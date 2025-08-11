@@ -3,6 +3,7 @@ import { Sarabun } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "../contexts/AppContext";
 import LayoutContent from "../components/LayoutContent";
+import { Toaster } from "@/components/ui/sonner"
 
 const sarabun = Sarabun({
   weight: ['200', '300', '400', '500', '600', '700', '800'],
@@ -26,6 +27,7 @@ export default function RootLayout({
         <AppProvider>
           <LayoutContent>
             {children}
+            <Toaster />
           </LayoutContent>
         </AppProvider>
       </body>
