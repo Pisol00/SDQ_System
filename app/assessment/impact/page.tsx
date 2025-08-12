@@ -156,33 +156,37 @@ const ImpactAssessmentPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 md:bg-white">
-      <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+    <div className="bg-gray-50 min-h-screen">
+      <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">คำถามเพิ่มเติม - ประเมินผลกระทบ</h1>
-          <div className="text-sm sm:text-base text-gray-600">
-            <p className="mb-1 sm:mb-0">
-              <span className="font-medium">นักเรียน:</span> {currentAssessment.studentName}
-            </p>
-            <p className="sm:inline sm:ml-4">
-              <span className="font-medium">ห้อง:</span> {getCurrentClassroom().name}
-            </p>
+        <div className="mb-8">
+          <div className="bg-white rounded-lg border border-slate-200 p-6">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-800 mb-2">คำถามเพิ่มเติม - ประเมินผลกระทบ</h1>
+              <div className="text-slate-600 space-y-1 sm:space-y-0">
+                <p className="sm:inline">
+                  <span className="font-medium">นักเรียน:</span> {currentAssessment.studentName}
+                </p>
+                <p className="sm:inline sm:ml-4">
+                  <span className="font-medium">ห้อง:</span> {getCurrentClassroom().name}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow duration-200">
           {/* Progress Bar */}
           <div className="mb-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-              <span className="text-sm font-medium text-gray-500">
+              <span className="text-sm font-medium text-slate-600">
                 ความคืบหน้า
               </span>
-              <span className="text-sm font-medium text-gray-500">
+              <span className="text-sm font-medium text-slate-600">
                 {Math.round(getProgress())}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-slate-200 rounded-full h-2">
               <div 
                 className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${getProgress()}%` }}
@@ -192,8 +196,8 @@ const ImpactAssessmentPage: React.FC = () => {
 
           {/* Main Question */}
           {impactResponses.hasProblems === -1 && (
-            <div className="mb-6 sm:mb-8">
-              <h2 className="text-lg sm:text-xl font-medium text-gray-800 mb-4 sm:mb-6 leading-relaxed">
+            <div className="mb-8">
+              <h2 className="text-lg sm:text-xl font-medium text-slate-800 mb-6 leading-relaxed">
                 {impactQuestions.mainQuestion.text}
               </h2>
 
@@ -202,10 +206,10 @@ const ImpactAssessmentPage: React.FC = () => {
                   <button
                     key={option.value}
                     onClick={() => handleMainResponse(option.value)}
-                    className="w-full p-3 sm:p-4 text-left border-2 rounded-lg transition-colors border-gray-200 hover:border-gray-300 hover:bg-gray-50 active:scale-95"
+                    className="w-full p-4 text-left border-2 rounded-lg transition-all duration-200 active:scale-95 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                   >
                     <div className="flex items-center">
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 mr-3"></div>
+                      <div className="w-4 h-4 rounded-full border-2 border-slate-300 mr-3"></div>
                       <span className="font-medium text-sm sm:text-base">{option.label}</span>
                     </div>
                   </button>
@@ -216,8 +220,8 @@ const ImpactAssessmentPage: React.FC = () => {
 
           {/* Show selected main answer */}
           {impactResponses.hasProblems !== -1 && (
-            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs sm:text-sm text-blue-600 font-medium">คำตอบที่เลือก:</p>
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-600 font-medium">คำตอบที่เลือก:</p>
               <p className="text-blue-800 text-sm sm:text-base">
                 {impactQuestions.mainQuestion.options.find(o => o.value === impactResponses.hasProblems)?.label}
               </p>
@@ -226,14 +230,14 @@ const ImpactAssessmentPage: React.FC = () => {
 
           {/* Follow-up Questions */}
           {showFollowUp && currentFollowUpQuestion && (
-            <div className="mb-6 sm:mb-8">
+            <div className="mb-8">
               <div className="mb-4">
-                <span className="text-sm font-medium text-gray-500">
+                <span className="text-sm font-medium text-slate-600">
                   คำถามที่ {currentQuestionIndex + 2} จาก {impactQuestions.followUpQuestions.length + 1}
                 </span>
               </div>
 
-              <h2 className="text-lg sm:text-xl font-medium text-gray-800 mb-4 sm:mb-6 leading-relaxed">
+              <h2 className="text-lg sm:text-xl font-medium text-slate-800 mb-6 leading-relaxed">
                 {currentFollowUpQuestion.text}
               </h2>
 
@@ -242,17 +246,17 @@ const ImpactAssessmentPage: React.FC = () => {
                   <button
                     key={option.value}
                     onClick={() => handleFollowUpResponse(currentFollowUpQuestion.id, option.value)}
-                    className={`w-full p-3 sm:p-4 text-left border-2 rounded-lg transition-colors active:scale-95 ${
+                    className={`w-full p-4 text-left border-2 rounded-lg transition-all duration-200 active:scale-95 ${
                       impactResponses[currentFollowUpQuestion.id as keyof typeof impactResponses] === option.value
                         ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center">
                       <div className={`w-4 h-4 rounded-full border-2 mr-3 flex items-center justify-center ${
                         impactResponses[currentFollowUpQuestion.id as keyof typeof impactResponses] === option.value
                           ? 'border-blue-500 bg-blue-500'
-                          : 'border-gray-300'
+                          : 'border-slate-300'
                       }`}>
                         {impactResponses[currentFollowUpQuestion.id as keyof typeof impactResponses] === option.value && (
                           <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -278,9 +282,9 @@ const ImpactAssessmentPage: React.FC = () => {
                       impactResponses: { hasProblems: -1 }
                     });
                   } : prevFollowUpQuestion}
-                  className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="w-full sm:w-auto px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  {currentQuestionIndex === 0 ? 'กลับไปคำถามแรก' : 'ย้อนกลับ'}
+                  {currentQuestionIndex === 0 ? 'กลับไปคำถามแรก' : 'ก่อนหน้า'}
                 </button>
 
                 {isLastFollowUpQuestion ? (
@@ -312,14 +316,14 @@ const ImpactAssessmentPage: React.FC = () => {
                         impactResponses: { hasProblems: -1 }
                       });
                     }}
-                    className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full sm:w-auto px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     ย้อนกลับ
                   </button>
                 ) : (
                   <button
                     onClick={handleBackToAssessment}
-                    className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full sm:w-auto px-6 py-3 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
                   >
                     กลับไปแก้ไข SDQ
                   </button>
