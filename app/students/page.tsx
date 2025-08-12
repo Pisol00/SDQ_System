@@ -1,11 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { PlusCircle, Search, User, FileSpreadsheet } from 'lucide-react';
+import { PlusCircle, Search, User } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
-import ImportDialog from '../../components/ImportDialog';
+import { DynamicImportDialog, DynamicExcelProcessor, TableSkeleton, LoadingSpinner } from '../../components/LazyComponents';
 import { toast } from 'sonner';
-import { showToast } from '../../utils/toast'; // เพิ่ม import นี้
+import { showToast } from '../../utils/toast';
 
 const StudentsPage: React.FC = () => {
   const router = useRouter();
@@ -16,15 +16,17 @@ const StudentsPage: React.FC = () => {
     startNewAssessment,
     assessments,
     isProcessingFile,
-    handleFileUpload,
-    // เพิ่ม states สำหรับ Excel import
+    setIsProcessingFile,
+    // Excel import states
     showImportDialog,
     setShowImportDialog,
     excelSheets,
     selectedSheet,
     previewData,
     previewSheetData,
-    importStudentsFromExcel
+    importStudentsFromExcel,
+    setExcelFile,
+    setExcelSheets
   } = useApp();
 
   const [newStudent, setNewStudent] = useState({ 
@@ -34,6 +36,7 @@ const StudentsPage: React.FC = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
   
   const classroomStudents = getClassroomStudents();
   const currentClassroom = getCurrentClassroom();
@@ -61,8 +64,19 @@ const StudentsPage: React.FC = () => {
   };
 
   const handleViewStudentHistory = (student: any) => {
-    // Navigate to results with student filter
     router.push(`/results?student=${student.id}`);
+  };
+
+  // Excel file processing with lazy loading
+  const handleFileProcessed = (workbook: any, file: File) => {
+    setExcelFile(workbook);
+    setExcelSheets(workbook.SheetNames);
+    setShowImportDialog(true);
+    showToast.success('อ่านไฟล์ Excel เรียบร้อยแล้ว');
+  };
+
+  const handleFileError = (error: string) => {
+    showToast.error('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel', error);
   };
 
   return (
@@ -155,36 +169,18 @@ const StudentsPage: React.FC = () => {
                   เพิ่มนักเรียน
                 </button>
                 
-                {/* Excel Import */}
+                {/* Excel Import Section */}
                 <div className="border-t border-slate-200 pt-6">
                   <h3 className="text-sm font-medium text-slate-700 mb-3">นำเข้าจาก Excel</h3>
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="excel-upload"
-                    disabled={isProcessingFile}
-                  />
-                  <label
-                    htmlFor="excel-upload"
-                    className={`w-full border-2 border-dashed border-slate-300 rounded-lg p-4 text-center cursor-pointer hover:border-slate-400 transition-colors flex flex-col items-center gap-2 ${
-                      isProcessingFile ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    {isProcessingFile ? (
-                      <>
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                        <span className="text-sm text-slate-600">กำลังประมวลผล...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FileSpreadsheet className="h-8 w-8 text-slate-400" />
-                        <span className="text-sm text-slate-600">คลิกเพื่อเลือกไฟล์ Excel</span>
-                        <span className="text-xs text-slate-500">รองรับ .xlsx, .xls</span>
-                      </>
-                    )}
-                  </label>
+                  
+                  <Suspense fallback={<LoadingSpinner message="กำลังเตรียมเครื่องมือ..." />}>
+                    <DynamicExcelProcessor
+                      onFileProcessed={handleFileProcessed}
+                      onError={handleFileError}
+                      isProcessing={isProcessingFile}
+                      disabled={isProcessingFile}
+                    />
+                  </Suspense>
                 </div>
               </div>
             </div>
@@ -213,7 +209,9 @@ const StudentsPage: React.FC = () => {
               </div>
 
               {/* Students List */}
-              {filteredStudents.length === 0 ? (
+              {isLoadingStudents ? (
+                <TableSkeleton rows={5} />
+              ) : filteredStudents.length === 0 ? (
                 <div className="text-center py-12">
                   <User className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                   <p className="text-slate-500 text-lg mb-2">
@@ -366,17 +364,19 @@ const StudentsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Import Dialog - เพิ่มส่วนนี้ */}
+      {/* Lazy Loaded Import Dialog */}
       {showImportDialog && (
-        <ImportDialog
-          onClose={() => setShowImportDialog(false)}
-          onImport={importStudentsFromExcel}
-          excelSheets={excelSheets}
-          selectedSheet={selectedSheet}
-          previewData={previewData}
-          onPreviewSheet={previewSheetData}
-          currentClassroom={currentClassroom}
-        />
+        <Suspense fallback={<LoadingSpinner message="กำลังเตรียมข้อมูล..." />}>
+          <DynamicImportDialog
+            onClose={() => setShowImportDialog(false)}
+            onImport={importStudentsFromExcel}
+            excelSheets={excelSheets}
+            selectedSheet={selectedSheet}
+            previewData={previewData}
+            onPreviewSheet={previewSheetData}
+            currentClassroom={currentClassroom}
+          />
+        </Suspense>
       )}
     </div>
   );

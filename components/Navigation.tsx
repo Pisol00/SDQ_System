@@ -1,10 +1,10 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { BarChart3, Users, ClipboardList, PieChart, ChevronDown, PlusCircle, Menu, X, User } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import ClassroomDialog from './ClassroomDialog';
-import { showToast } from '../utils/toast'; // เพิ่ม import นี้
+import { DynamicClassroomDialog, DialogLoading } from './LazyComponents';
+import { showToast } from '../utils/toast';
 
 // Enhanced Logo Component with click to home
 const Logo = ({ onClick }: { onClick?: () => void }) => {
@@ -283,9 +283,9 @@ const Navigation: React.FC = () => {
   const pathname = usePathname();
   const { 
     getCurrentClassroom, 
-    showClassroomDialog, // เพิ่ม state นี้
-    setShowClassroomDialog, // เพิ่ม setter นี้
-    addClassroom // เพิ่ม function นี้
+    showClassroomDialog,
+    setShowClassroomDialog,
+    addClassroom
   } = useApp();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -514,12 +514,14 @@ const Navigation: React.FC = () => {
         </div>
       )}
 
-      {/* Classroom Dialog - เพิ่มส่วนนี้ */}
+      {/* Lazy Loaded Classroom Dialog */}
       {showClassroomDialog && (
-        <ClassroomDialog
-          onClose={() => setShowClassroomDialog(false)}
-          onAddClassroom={addClassroom}
-        />
+        <Suspense fallback={<DialogLoading message="กำลังเตรียมฟอร์ม..." />}>
+          <DynamicClassroomDialog
+            onClose={() => setShowClassroomDialog(false)}
+            onAddClassroom={addClassroom}
+          />
+        </Suspense>
       )}
     </>
   );

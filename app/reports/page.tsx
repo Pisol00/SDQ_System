@@ -1,12 +1,64 @@
 'use client';
-import React, { useMemo } from 'react';
+import React, { useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer
-} from 'recharts';
-import { useApp } from '../../contexts/AppContext';
 import { FileText } from 'lucide-react';
+import { useApp } from '../../contexts/AppContext';
+import { 
+  DynamicBarChart, 
+  DynamicResponsiveContainer, 
+  DynamicXAxis, 
+  DynamicYAxis, 
+  DynamicCartesianGrid, 
+  DynamicTooltip, 
+  DynamicLegend, 
+  DynamicBar,
+  ChartSkeleton,
+  CardGridSkeleton
+} from '../../components/LazyComponents';
+
+// Chart Component with lazy loading
+const LazyBarChart = ({ data, margin, children }: any) => (
+  <Suspense fallback={<ChartSkeleton />}>
+    <DynamicResponsiveContainer width="100%" height={250} className="sm:!h-[350px]">
+      <DynamicBarChart data={data} margin={margin || { top: 10, right: 15, left: 15, bottom: 30 }}>
+        {children}
+      </DynamicBarChart>
+    </DynamicResponsiveContainer>
+  </Suspense>
+);
+
+// Summary Chart Component
+const SummaryChart = ({ data, height = 200 }: { data: any[]; height?: number }) => (
+  <Suspense fallback={<ChartSkeleton />}>
+    <DynamicResponsiveContainer width="100%" height={height} className="sm:!h-[300px]">
+      <DynamicBarChart data={data} margin={{ top: 10, right: 15, left: 15, bottom: 30 }}>
+        <DynamicCartesianGrid strokeDasharray="3 3" />
+        <DynamicXAxis 
+          dataKey="name"
+          axisLine={true}
+          tickLine={true}
+          tick={{ fill: '#374151', fontSize: 10 }}
+        />
+        <DynamicYAxis 
+          label={{ value: 'จำนวน', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#374151', fontSize: 10 } }}
+          axisLine={true}
+          tickLine={true}
+          tick={{ fill: '#374151', fontSize: 10 }}
+        />
+        <DynamicTooltip 
+          contentStyle={{ 
+            backgroundColor: '#ffffff', 
+            border: '1px solid #d1d5db', 
+            borderRadius: '6px',
+            color: '#374151',
+            fontSize: '12px'
+          }}
+        />
+        <DynamicBar dataKey="จำนวน" fill="#3b82f6" />
+      </DynamicBarChart>
+    </DynamicResponsiveContainer>
+  </Suspense>
+);
 
 const ReportsPage: React.FC = () => {
   const router = useRouter();
@@ -172,62 +224,63 @@ const ReportsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* สถิติพื้นฐาน */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
-            <h3 className="text-blue-700 text-xs sm:text-sm font-medium">นักเรียนทั้งหมด</h3>
-            <p className="text-xl sm:text-2xl font-bold text-slate-800">{reportData.totalStudents}</p>
+        {/* สถิติพื้นฐาน - ใช้ Suspense สำหรับ lazy loading */}
+        <Suspense fallback={<CardGridSkeleton cols={4} rows={1} />}>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+              <h3 className="text-blue-700 text-xs sm:text-sm font-medium">นักเรียนทั้งหมด</h3>
+              <p className="text-xl sm:text-2xl font-bold text-slate-800">{reportData.totalStudents}</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+              <h3 className="text-green-700 text-xs sm:text-sm font-medium">ประเมินแล้ว</h3>
+              <p className="text-xl sm:text-2xl font-bold text-slate-800">{reportData.totalAssessments}</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+              <h3 className="text-yellow-700 text-xs sm:text-sm font-medium">เสี่ยง</h3>
+              <p className="text-xl sm:text-2xl font-bold text-slate-800">{reportData.totalDifficultiesCount.เสี่ยง}</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+              <h3 className="text-red-700 text-xs sm:text-sm font-medium">มีปัญหา</h3>
+              <p className="text-xl sm:text-2xl font-bold text-slate-800">{reportData.totalDifficultiesCount.มีปัญหา}</p>
+            </div>
           </div>
-          <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
-            <h3 className="text-green-700 text-xs sm:text-sm font-medium">ประเมินแล้ว</h3>
-            <p className="text-xl sm:text-2xl font-bold text-slate-800">{reportData.totalAssessments}</p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
-            <h3 className="text-yellow-700 text-xs sm:text-sm font-medium">เสี่ยง</h3>
-            <p className="text-xl sm:text-2xl font-bold text-slate-800">{reportData.totalDifficultiesCount.เสี่ยง}</p>
-          </div>
-          <div className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
-            <h3 className="text-red-700 text-xs sm:text-sm font-medium">มีปัญหา</h3>
-            <p className="text-xl sm:text-2xl font-bold text-slate-800">{reportData.totalDifficultiesCount.มีปัญหา}</p>
-          </div>
-        </div>
+        </Suspense>
 
         {/* กราฟที่ 1 - สรุปการพฤติกรรมการประเมิน SDQ 4 ด้าน */}
         <div className="bg-white rounded-lg border border-slate-200 p-6 mb-8 hover:shadow-md transition-shadow duration-200">
           <h2 className="text-lg font-semibold text-slate-800 mb-4 text-center">
             สรุปการพฤติกรรมการประเมิน SDQ 4 ด้าน
           </h2>
-          <ResponsiveContainer width="100%" height={250} className="sm:!h-[350px]">
-            <BarChart data={categoryBarData} margin={{ top: 10, right: 15, left: 15, bottom: 30 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="name" 
-                axisLine={true}
-                tickLine={true}
-                tick={{ fill: '#374151', fontSize: 10 }}
-                className="sm:text-xs"
-              />
-              <YAxis 
-                label={{ value: 'จำนวน', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#374151', fontSize: 10 } }}
-                axisLine={true}
-                tickLine={true}
-                tick={{ fill: '#374151', fontSize: 10 }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#ffffff', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px',
-                  color: '#374151',
-                  fontSize: '12px'
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: '12px' }} />
-              <Bar dataKey="ปกติ" fill="#22c55e" name="ปกติ" />
-              <Bar dataKey="เสี่ยง" fill="#eab308" name="เสี่ยง" />
-              <Bar dataKey="มีปัญหา" fill="#ef4444" name="มีปัญหา" />
-            </BarChart>
-          </ResponsiveContainer>
+          
+          <LazyBarChart data={categoryBarData}>
+            <DynamicCartesianGrid strokeDasharray="3 3" />
+            <DynamicXAxis 
+              dataKey="name" 
+              axisLine={true}
+              tickLine={true}
+              tick={{ fill: '#374151', fontSize: 10 }}
+              className="sm:text-xs"
+            />
+            <DynamicYAxis 
+              label={{ value: 'จำนวน', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#374151', fontSize: 10 } }}
+              axisLine={true}
+              tickLine={true}
+              tick={{ fill: '#374151', fontSize: 10 }}
+            />
+            <DynamicTooltip 
+              contentStyle={{ 
+                backgroundColor: '#ffffff', 
+                border: '1px solid #d1d5db', 
+                borderRadius: '6px',
+                color: '#374151',
+                fontSize: '12px'
+              }}
+            />
+            <DynamicLegend wrapperStyle={{ fontSize: '12px' }} />
+            <DynamicBar dataKey="ปกติ" fill="#22c55e" name="ปกติ" />
+            <DynamicBar dataKey="เสี่ยง" fill="#eab308" name="เสี่ยง" />
+            <DynamicBar dataKey="มีปัญหา" fill="#ef4444" name="มีปัญหา" />
+          </LazyBarChart>
           
           {/* ตารางข้อมูล - แสดงแบบ compact บนมือถือ */}
           <div className="mt-6">
@@ -297,33 +350,8 @@ const ReportsPage: React.FC = () => {
           <h2 className="text-lg font-semibold text-slate-800 mb-4 text-center">
             กราฟสรุป แสดงกลุ่มปกติ กลุ่มเสี่ยง และกลุ่มมีปัญหา
           </h2>
-          <ResponsiveContainer width="100%" height={200} className="sm:!h-[300px]">
-            <BarChart data={summaryBarData} margin={{ top: 10, right: 15, left: 15, bottom: 30 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="name"
-                axisLine={true}
-                tickLine={true}
-                tick={{ fill: '#374151', fontSize: 10 }}
-              />
-              <YAxis 
-                label={{ value: 'จำนวน', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#374151', fontSize: 10 } }}
-                axisLine={true}
-                tickLine={true}
-                tick={{ fill: '#374151', fontSize: 10 }}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#ffffff', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px',
-                  color: '#374151',
-                  fontSize: '12px'
-                }}
-              />
-              <Bar dataKey="จำนวน" fill="#3b82f6" />
-            </BarChart>
-          </ResponsiveContainer>
+          
+          <SummaryChart data={summaryBarData} />
 
           {/* ตารางข้อมูลสรุป */}
           <div className="mt-6">
