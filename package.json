@@ -6,13 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "analyze": "ANALYZE=true next build",
-    "build:production": "NODE_ENV=production next build",
-    "preview": "next build && next start",
-    "type-check": "tsc --noEmit",
-    "clean": "rm -rf .next && rm -rf out",
-    "precommit": "npm run lint && npm run type-check"
+    "lint": "next lint"
   },
   "dependencies": {
     "lucide-react": "^0.537.0",
@@ -29,39 +23,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@svgr/webpack": "^8.1.0",
     "tailwindcss": "^4",
-    "typescript": "^5",
-    "webpack-bundle-analyzer": "^4.10.1"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "performance": {
-    "budgets": [
-      {
-        "type": "initial",
-        "maximumWarning": "500kb",
-        "maximumError": "1mb"
-      },
-      {
-        "type": "anyComponentStyle",
-        "maximumWarning": "150kb",
-        "maximumError": "200kb"
-      }
-    ]
+    "typescript": "^5"
   }
 }
