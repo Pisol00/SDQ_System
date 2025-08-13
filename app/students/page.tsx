@@ -27,14 +27,14 @@ const StudentsPage: React.FC = () => {
     importStudentsFromExcel
   } = useApp();
 
-  const [newStudent, setNewStudent] = useState({ 
-    name: '', 
-    studentId: '', 
-    age: '' 
+  const [newStudent, setNewStudent] = useState({
+    name: '',
+    studentId: '',
+    age: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  
+
   const classroomStudents = getClassroomStudents();
   const currentClassroom = getCurrentClassroom();
 
@@ -62,8 +62,9 @@ const StudentsPage: React.FC = () => {
 
   const handleViewStudentHistory = (student: any) => {
     // Navigate to results with student filter
-    router.push(`/results?student=${student.id}`);
+    router.push(`/results/student/${student.id}`);
   };
+
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -105,7 +106,7 @@ const StudentsPage: React.FC = () => {
           <div className={`lg:col-span-1 ${showAddForm ? 'block' : 'hidden lg:block'}`}>
             <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow duration-200">
               <h2 className="text-lg font-semibold text-slate-800 mb-6">เพิ่มนักเรียนใหม่</h2>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">ชื่อ-นามสกุล</label>
@@ -113,40 +114,40 @@ const StudentsPage: React.FC = () => {
                     type="text"
                     className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-colors hover:border-slate-400"
                     value={newStudent.name}
-                    onChange={(e) => setNewStudent({...newStudent, name: e.target.value})}
+                    onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
                     placeholder="กรอกชื่อ-นามสกุล"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">รหัสนักเรียน</label>
                   <input
                     type="text"
                     className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-colors hover:border-slate-400"
                     value={newStudent.studentId}
-                    onChange={(e) => setNewStudent({...newStudent, studentId: e.target.value})}
+                    onChange={(e) => setNewStudent({ ...newStudent, studentId: e.target.value })}
                     placeholder="กรอกรหัสนักเรียน"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">ชั้น</label>
                   <div className="w-full p-3 border border-slate-200 rounded-lg bg-slate-50 text-sm text-slate-600">
                     {currentClassroom.name} (ดึงจากห้องปัจจุบัน)
                   </div>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">อายุ</label>
                   <input
                     type="number"
                     className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-colors hover:border-slate-400"
                     value={newStudent.age}
-                    onChange={(e) => setNewStudent({...newStudent, age: e.target.value})}
+                    onChange={(e) => setNewStudent({ ...newStudent, age: e.target.value })}
                     placeholder="กรอกอายุ"
                   />
                 </div>
-                
+
                 <button
                   onClick={handleAddStudent}
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium cursor-pointer"
@@ -154,7 +155,7 @@ const StudentsPage: React.FC = () => {
                   <PlusCircle className="h-4 w-4" />
                   เพิ่มนักเรียน
                 </button>
-                
+
                 {/* Excel Import */}
                 <div className="border-t border-slate-200 pt-6">
                   <h3 className="text-sm font-medium text-slate-700 mb-3">นำเข้าจาก Excel</h3>
@@ -168,9 +169,8 @@ const StudentsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="excel-upload"
-                    className={`w-full border-2 border-dashed border-slate-300 rounded-lg p-4 text-center cursor-pointer hover:border-slate-400 transition-colors flex flex-col items-center gap-2 ${
-                      isProcessingFile ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                    className={`w-full border-2 border-dashed border-slate-300 rounded-lg p-4 text-center cursor-pointer hover:border-slate-400 transition-colors flex flex-col items-center gap-2 ${isProcessingFile ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
                   >
                     {isProcessingFile ? (
                       <>
@@ -193,7 +193,7 @@ const StudentsPage: React.FC = () => {
           {/* Students List */}
           <div className={`lg:col-span-3 ${showAddForm ? 'hidden lg:block' : 'block'}`}>
             <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow duration-200">
-              
+
               {/* Header and Search */}
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                 <h2 className="text-lg font-semibold text-slate-800">
@@ -320,7 +320,7 @@ const StudentsPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="grid grid-cols-3 gap-4 mb-4 text-center">
                           <div>
                             <p className="text-xs text-slate-500 mb-1">ชั้น</p>
@@ -339,7 +339,7 @@ const StudentsPage: React.FC = () => {
                             </p>
                           </div>
                         </div>
-                        
+
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleStartAssessment(student)}
