@@ -1,5 +1,5 @@
 'use client';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import * as XLSX from 'xlsx';
 import { showToast } from '../utils/toast';
 import { calculateAge } from '../utils/sdqCalculations';
@@ -156,6 +156,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentClassroom, setCurrentClassroom] = useState<number>(1);
   const [students, setStudents] = useState<Student[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const createdAssessments = useRef<Set<number>>(new Set());
 
   // Current Assessment State
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
@@ -340,32 +341,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       showToast.error('เกิดข้อผิดพลาดในการแสดงตัวอย่างข้อมูล');
     }
   };
+const getOrCreateAssessment = (student: Student): Assessment => {
+  // ตรวจสอบก่อนว่ากำลังสร้างอยู่หรือไม่
+  if (createdAssessments.current.has(student.id)) {
+    // รอให้ state update
+    return assessments.find(a => a.studentId === student.id && !a.completed)!;
+  }
 
-  const getOrCreateAssessment = (student: Student): Assessment => {
-    // หา assessment ที่ยังไม่เสร็จของนักเรียนคนนี้
-    let existingAssessment = assessments.find(a =>
-      a.studentId === student.id && !a.completed
-    );
+  let existingAssessment = assessments.find(a =>
+    a.studentId === student.id && !a.completed
+  );
 
-    if (!existingAssessment) {
-      // สร้าง assessment ใหม่
-      existingAssessment = {
-        id: Date.now(),
-        studentId: student.id,
-        studentName: student.name,
-        classroomId: student.classroomId,
-        date: new Date().toISOString().split('T')[0],
-        responses: {},
-        impactResponses: { hasProblems: -1 },
-        completed: false
-      };
+  if (!existingAssessment) {
+    createdAssessments.current.add(student.id);
+    
+    existingAssessment = {
+      id: Date.now() + Math.random(), // ทำให้ unique มากขึ้น
+      studentId: student.id,
+      studentName: student.name,
+      classroomId: student.classroomId,
+      date: new Date().toISOString().split('T')[0],
+      responses: {},
+      impactResponses: { hasProblems: -1 },
+      completed: false
+    };
 
-      // เพิ่มลง state (แต่ยังไม่ save ถาวร)
-      setAssessments(prev => [...prev, existingAssessment!]);
-    }
+    setAssessments(prev => [...prev, existingAssessment!]);
+    
+    // เคลียร์หลังจากสร้างเสร็จ
+    setTimeout(() => {
+      createdAssessments.current.delete(student.id);
+    }, 100);
+  }
 
-    return existingAssessment;
-  };
+  return existingAssessment;
+};
 
   const getAssessmentByStudentId = (studentId: number): Assessment | null => {
     return assessments.find(a =>
