@@ -5,7 +5,7 @@ import { PlusCircle, Search, User, FileSpreadsheet } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import ImportDialog from '../../components/ImportDialog';
 import { toast } from 'sonner';
-import { showToast } from '../../utils/toast'; // เพิ่ม import นี้
+import { showToast } from '../../utils/toast';
 
 const StudentsPage: React.FC = () => {
   const router = useRouter();
@@ -17,7 +17,10 @@ const StudentsPage: React.FC = () => {
     assessments,
     isProcessingFile,
     handleFileUpload,
-    // เพิ่ม states สำหรับ Excel import
+    // ✅ เพิ่ม functions ใหม่
+    getStudentAssessmentStatus,
+    getCompletedAssessmentByStudentId,
+    // states สำหรับ Excel import
     showImportDialog,
     setShowImportDialog,
     excelSheets,
@@ -51,19 +54,50 @@ const StudentsPage: React.FC = () => {
     student.studentId.includes(searchTerm)
   );
 
+  // ✅ แก้ไข functions เหล่านี้
+  const getStudentStatus = (student: any) => {
+    return getStudentAssessmentStatus(student.id);
+  };
+
+  const getStudentLatestAssessment = (student: any) => {
+    return getCompletedAssessmentByStudentId(student.id);
+  };
+
   const hasStudentHistory = (student: any) => {
     return assessments.some(a => a.studentId === student.id);
   };
 
+  // ✅ แก้ไข handleStartAssessment
   const handleStartAssessment = (student: any) => {
-    router.push(`/assessment/${student.id}`);
+    const status = getStudentStatus(student);
+    
+    switch (status) {
+      case 'completed':
+        // ถ้าทำเสร็จแล้ว ให้ไปดูผลการประเมิน
+        const latestAssessment = getStudentLatestAssessment(student);
+        if (latestAssessment) {
+          showToast.info(`${student.name} ได้ทำการประเมินเรียบร้อยแล้ว`);
+          router.push(`/results/${latestAssessment.id}`);
+        }
+        break;
+        
+      case 'in-progress':
+        // ถ้าทำค้างไว้ ให้ไปต่อ
+        showToast.info(`ไปต่อการประเมินของ ${student.name}`);
+        router.push(`/assessment/${student.id}`);
+        break;
+        
+      case 'not-started':
+        // ถ้ายังไม่ได้ทำ ให้เริ่มใหม่
+        router.push(`/assessment/${student.id}`);
+        break;
+    }
   };
 
   const handleViewStudentHistory = (student: any) => {
     // Navigate to results with student filter
     router.push(`/results/student/${student.id}`);
   };
-
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -73,8 +107,8 @@ const StudentsPage: React.FC = () => {
           <div className="bg-white rounded-lg border border-slate-200 p-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div>
-                <h1 className="text-3xl font-bold text-slate-800 mb-2">จัดการข้อมูลนักเรียน</h1>
-                <p className="text-slate-600">เพิ่มและจัดการข้อมูลนักเรียนสำหรับการประเมิน SDQ</p>
+                <h1 className="text-3xl font-bold text-slate-800 mb-2">รายชื่อนักเรียน</h1>
+                <p className="text-slate-600">จัดการนักเรียนและการประเมิน SDQ ในห้อง {currentClassroom.name}</p>
               </div>
               <div className="text-left lg:text-right">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -89,22 +123,20 @@ const StudentsPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Add Button */}
-        <div className="mb-6 lg:hidden">
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
-          >
-            <PlusCircle className="h-5 w-5" />
-            {showAddForm ? 'ยกเลิก' : 'เพิ่มนักเรียนใหม่'}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Add Student Form */}
           <div className={`lg:col-span-1 ${showAddForm ? 'block' : 'hidden lg:block'}`}>
             <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow duration-200">
-              <h2 className="text-lg font-semibold text-slate-800 mb-6">เพิ่มนักเรียนใหม่</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-slate-800">เพิ่มนักเรียนใหม่</h2>
+                <button
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  className="lg:hidden p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  {showAddForm ? '✕' : '+'}
+                </button>
+              </div>
 
               <div className="space-y-4">
                 <div>
@@ -168,8 +200,7 @@ const StudentsPage: React.FC = () => {
                   />
                   <label
                     htmlFor="excel-upload"
-                    className={`w-full border-2 border-dashed border-slate-300 rounded-lg p-4 text-center cursor-pointer hover:border-slate-400 transition-colors flex flex-col items-center gap-2 ${isProcessingFile ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
+                    className={`w-full border-2 border-dashed border-slate-300 rounded-lg p-4 text-center cursor-pointer hover:border-slate-400 transition-colors flex flex-col items-center gap-2 ${isProcessingFile ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     {isProcessingFile ? (
                       <>
@@ -239,61 +270,101 @@ const StudentsPage: React.FC = () => {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {filteredStudents.map((student) => (
-                            <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
-                              <td className="py-4 px-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                                    <User className="h-5 w-5 text-blue-600" />
+                          {filteredStudents.map((student) => {
+                            const status = getStudentStatus(student);
+                            const latestAssessment = status === 'completed' ? getStudentLatestAssessment(student) : null;
+                            
+                            return (
+                              <tr key={student.id} className="hover:bg-slate-50 transition-colors group">
+                                <td className="py-4 px-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                      <User className="h-5 w-5 text-blue-600" />
+                                    </div>
+                                    <div>
+                                      <p className="font-medium text-slate-800">{student.name}</p>
+                                      <p className="text-xs text-slate-500">ID: {student.studentId}</p>
+                                    </div>
                                   </div>
-                                  <div>
-                                    <p className="font-medium text-slate-800">{student.name}</p>
-                                    <p className="text-xs text-slate-500">เพิ่มเมื่อ {new Date(student.createdDate).toLocaleDateString('th-TH')}</p>
+                                </td>
+                                
+                                <td className="py-4 px-4">
+                                  <p className="text-sm text-slate-700">{student.studentId}</p>
+                                </td>
+                                
+                                <td className="py-4 px-4 text-center">
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {student.grade}
+                                  </span>
+                                </td>
+                                
+                                <td className="py-4 px-4 text-center">
+                                  <p className="text-sm text-slate-700">{student.age} ปี</p>
+                                </td>
+                                
+                                <td className="py-4 px-4 text-center">
+                                  <div className="flex flex-col items-center gap-1">
+                                    {status === 'completed' && latestAssessment && (
+                                      <>
+                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                          ประเมินเสร็จแล้ว
+                                        </span>
+                                        <span className="text-xs text-slate-500">
+                                          {new Date(latestAssessment.completedDate || '').toLocaleDateString('th-TH')}
+                                        </span>
+                                        <span className={`text-xs px-2 py-1 rounded ${
+                                          latestAssessment.interpretations?.totalDifficulties === 'ปกติ' ? 'bg-green-100 text-green-800' :
+                                          latestAssessment.interpretations?.totalDifficulties === 'เสี่ยง' ? 'bg-yellow-100 text-yellow-800' :
+                                          latestAssessment.interpretations?.totalDifficulties === 'มีปัญหา' ? 'bg-red-100 text-red-800' :
+                                          'bg-gray-100 text-gray-800'
+                                        }`}>
+                                          {latestAssessment.interpretations?.totalDifficulties || 'ไม่ระบุ'}
+                                        </span>
+                                      </>
+                                    )}
+                                    {status === 'in-progress' && (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        กำลังประเมิน
+                                      </span>
+                                    )}
+                                    {status === 'not-started' && (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        ยังไม่ได้ประเมิน
+                                      </span>
+                                    )}
                                   </div>
-                                </div>
-                              </td>
-                              <td className="py-4 px-4">
-                                <code className="px-2 py-1 bg-slate-100 rounded text-xs font-mono text-slate-700">{student.studentId}</code>
-                              </td>
-                              <td className="py-4 px-4 text-center">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  {student.grade}
-                                </span>
-                              </td>
-                              <td className="py-4 px-4 text-center">
-                                <span className="text-sm text-slate-600">{student.age} ปี</span>
-                              </td>
-                              <td className="py-4 px-4 text-center">
-                                {hasStudentHistory(student) ? (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    มีประวัติ
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    ยังไม่ประเมิน
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-4 px-4">
-                                <div className="flex justify-end gap-2">
-                                  <button
-                                    onClick={() => handleStartAssessment(student)}
-                                    className="px-3 py-1.5 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors font-medium"
-                                  >
-                                    ประเมิน
-                                  </button>
-                                  {hasStudentHistory(student) && (
+                                </td>
+                                
+                                <td className="py-4 px-4 text-right">
+                                  <div className="flex items-center justify-end gap-2">
                                     <button
-                                      onClick={() => handleViewStudentHistory(student)}
-                                      className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors font-medium"
+                                      onClick={() => handleStartAssessment(student)}
+                                      className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
+                                        status === 'completed'
+                                          ? 'bg-green-600 text-white hover:bg-green-700'
+                                          : status === 'in-progress'
+                                          ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                                      }`}
                                     >
-                                      ประวัติ
+                                      {status === 'completed' ? 'ดูผลประเมิน' : 
+                                       status === 'in-progress' ? 'ประเมินต่อ' : 
+                                       'เริ่มประเมิน'}
                                     </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
+                                    
+                                    {status === 'completed' && (
+                                      <button
+                                        onClick={() => handleViewStudentHistory(student)}
+                                        className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors font-medium"
+                                      >
+                                        ประวัติ
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
@@ -301,62 +372,99 @@ const StudentsPage: React.FC = () => {
 
                   {/* Mobile Card View */}
                   <div className="md:hidden space-y-3">
-                    {filteredStudents.map((student) => (
-                      <div key={student.id} className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <User className="h-5 w-5 text-blue-600" />
+                    {filteredStudents.map((student) => {
+                      const status = getStudentStatus(student);
+                      const latestAssessment = status === 'completed' ? getStudentLatestAssessment(student) : null;
+                      
+                      return (
+                        <div key={student.id} className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <User className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <h3 className="font-medium text-slate-800">{student.name}</h3>
+                                <p className="text-xs text-slate-500">รหัส: {student.studentId}</p>
+                              </div>
+                            </div>
+                            
+                            {/* แสดงสถานะ */}
+                            {status === 'completed' && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ประเมินเสร็จแล้ว
+                              </span>
+                            )}
+                            {status === 'in-progress' && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                กำลังประเมิน
+                              </span>
+                            )}
+                            {status === 'not-started' && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                ยังไม่ประเมิน
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-4 mb-4 text-center">
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">ชั้น</p>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {student.grade}
+                              </span>
                             </div>
                             <div>
-                              <h3 className="font-medium text-slate-800">{student.name}</h3>
-                              <p className="text-xs text-slate-500">รหัส: {student.studentId}</p>
+                              <p className="text-xs text-slate-500 mb-1">อายุ</p>
+                              <p className="text-sm font-medium text-slate-700">{student.age} ปี</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500 mb-1">ผลประเมิน</p>
+                              {status === 'completed' && latestAssessment ? (
+                                <p className={`text-xs font-medium px-2 py-1 rounded ${
+                                  latestAssessment.interpretations?.totalDifficulties === 'ปกติ' ? 'bg-green-100 text-green-800' :
+                                  latestAssessment.interpretations?.totalDifficulties === 'เสี่ยง' ? 'bg-yellow-100 text-yellow-800' :
+                                  latestAssessment.interpretations?.totalDifficulties === 'มีปัญหา' ? 'bg-red-100 text-red-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {latestAssessment.interpretations?.totalDifficulties || 'ไม่ระบุ'}
+                                </p>
+                              ) : (
+                                <p className="text-sm font-medium text-slate-700">
+                                  {status === 'in-progress' ? 'กำลังทำ' : 'ยังไม่ได้ประเมิน'}
+                                </p>
+                              )}
                             </div>
                           </div>
-                          {hasStudentHistory(student) && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              มีประวัติ
-                            </span>
-                          )}
-                        </div>
 
-                        <div className="grid grid-cols-3 gap-4 mb-4 text-center">
-                          <div>
-                            <p className="text-xs text-slate-500 mb-1">ชั้น</p>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              {student.grade}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-500 mb-1">อายุ</p>
-                            <p className="text-sm font-medium text-slate-700">{student.age} ปี</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-slate-500 mb-1">สถานะ</p>
-                            <p className="text-xs font-medium text-slate-700">
-                              {hasStudentHistory(student) ? 'ประเมินแล้ว' : 'ยังไม่ประเมิน'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleStartAssessment(student)}
-                            className="flex-1 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors font-medium"
-                          >
-                            ประเมิน SDQ
-                          </button>
-                          {hasStudentHistory(student) && (
+                          <div className="flex gap-2">
                             <button
-                              onClick={() => handleViewStudentHistory(student)}
-                              className="flex-1 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                              onClick={() => handleStartAssessment(student)}
+                              className={`flex-1 py-2 text-sm rounded-lg font-medium transition-colors ${
+                                status === 'completed'
+                                  ? 'bg-green-600 text-white hover:bg-green-700'
+                                  : status === 'in-progress'
+                                  ? 'bg-yellow-600 text-white hover:bg-yellow-700'
+                                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                              }`}
                             >
-                              ดูประวัติ
+                              {status === 'completed' ? 'ดูผลประเมิน' : 
+                               status === 'in-progress' ? 'ประเมินต่อ' : 
+                               'เริ่มประเมิน'}
                             </button>
-                          )}
+                            
+                            {status === 'completed' && (
+                              <button
+                                onClick={() => handleViewStudentHistory(student)}
+                                className="flex-1 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                              >
+                                ประวัติ
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -365,7 +473,7 @@ const StudentsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Import Dialog - เพิ่มส่วนนี้ */}
+      {/* Import Dialog */}
       {showImportDialog && (
         <ImportDialog
           onClose={() => setShowImportDialog(false)}

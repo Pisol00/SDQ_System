@@ -76,7 +76,7 @@ export interface PreviewStudent {
   gender: string;
 }
 
-// Context Type
+// Context Type - ✅ เพิ่ม functions ใหม่
 interface AppContextType {
   // State
   classrooms: Classroom[];
@@ -100,9 +100,12 @@ interface AppContextType {
   showClassroomDialog: boolean;
   showClassroomDropdown: boolean;
 
-  // New functions for dynamic assessment
+  // Assessment Management Functions
   getOrCreateAssessment: (student: Student) => Assessment;
   getAssessmentByStudentId: (studentId: number) => Assessment | null;
+  getCompletedAssessmentByStudentId: (studentId: number) => Assessment | null; // ✅ เพิ่ม
+  getStudentAssessmentStatus: (studentId: number) => 'completed' | 'in-progress' | 'not-started'; // ✅ เพิ่ม
+  addAssessment: (assessment: Assessment) => void; // ✅ เพิ่ม
   updateAssessment: (assessment: Assessment) => void;
 
   // Actions
@@ -225,6 +228,90 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return student?.classroomId === currentClassroom;
     });
 
+  // ✅ Assessment Management Functions - แก้ไขให้ถูกต้อง
+  const getOrCreateAssessment = (student: Student): Assessment => {
+    // ตรวจสอบก่อนว่ากำลังสร้างอยู่หรือไม่
+    if (createdAssessments.current.has(student.id)) {
+      // รอให้ state update
+      return assessments.find(a => a.studentId === student.id && !a.completed)!;
+    }
+
+    // หา assessment ที่ยังไม่เสร็จ
+    let existingAssessment = assessments.find(a =>
+      a.studentId === student.id && !a.completed
+    );
+
+    if (!existingAssessment) {
+      // สร้าง assessment ใหม่
+      createdAssessments.current.add(student.id);
+      
+      existingAssessment = {
+        id: Date.now() + Math.random(),
+        studentId: student.id,
+        studentName: student.name,
+        classroomId: student.classroomId,
+        date: new Date().toISOString().split('T')[0],
+        responses: {},
+        impactResponses: { hasProblems: -1 },
+        completed: false
+      };
+
+      setAssessments(prev => [...prev, existingAssessment!]);
+      
+      // เคลียร์หลังจากสร้างเสร็จ
+      setTimeout(() => {
+        createdAssessments.current.delete(student.id);
+      }, 100);
+    }
+
+    return existingAssessment;
+  };
+
+  const getAssessmentByStudentId = (studentId: number): Assessment | null => {
+    // หา assessment ที่ยังไม่เสร็จสำหรับ student คนนี้
+    return assessments.find(a =>
+      a.studentId === studentId && !a.completed
+    ) || null;
+  };
+
+  // ✅ เพิ่ม function สำหรับเช็ค assessment ที่เสร็จแล้ว
+  const getCompletedAssessmentByStudentId = (studentId: number): Assessment | null => {
+    const completedAssessments = assessments.filter(a =>
+      a.studentId === studentId && a.completed
+    );
+    
+    if (completedAssessments.length === 0) return null;
+    
+    // ส่งกลับ assessment ล่าสุด
+    return completedAssessments.sort((a, b) => 
+      new Date(b.completedDate || b.date).getTime() - 
+      new Date(a.completedDate || a.date).getTime()
+    )[0];
+  };
+
+  // ✅ เพิ่ม function สำหรับเช็คสถานะ assessment ของ student
+  const getStudentAssessmentStatus = (studentId: number): 'completed' | 'in-progress' | 'not-started' => {
+    const hasCompleted = assessments.some(a => a.studentId === studentId && a.completed);
+    const hasInProgress = assessments.some(a => a.studentId === studentId && !a.completed);
+    
+    if (hasCompleted) return 'completed';
+    if (hasInProgress) return 'in-progress';
+    return 'not-started';
+  };
+
+  // ✅ เพิ่ม function สำหรับเพิ่ม assessment ใหม่
+  const addAssessment = (assessment: Assessment) => {
+    setAssessments(prev => [...prev, assessment]);
+  };
+
+  const updateAssessment = (updatedAssessment: Assessment) => {
+    setAssessments(prev =>
+      prev.map(a =>
+        a.id === updatedAssessment.id ? updatedAssessment : a
+      )
+    );
+  };
+
   // Actions
   const addClassroom = (classroomData: Omit<Classroom, 'id' | 'createdDate'>) => {
     const newClassroom: Classroom = {
@@ -236,7 +323,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setCurrentClassroom(newClassroom.id);
     setShowClassroomDialog(false);
 
-    // ใช้ custom toast utilities
     showToast.success(`เพิ่มห้องเรียน ${newClassroom.name} เรียบร้อยแล้ว`);
   };
 
@@ -244,13 +330,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const newStudent: Student = {
       id: Date.now(),
       ...studentData,
-      grade: getCurrentClassroom().name, // ใช้ชื่อห้องปัจจุบัน
+      grade: getCurrentClassroom().name,
       classroomId: currentClassroom,
       createdDate: new Date().toISOString()
     };
     setStudents([...students, newStudent]);
 
-    // ใช้ custom toast utilities
     showToast.success(`เพิ่มนักเรียน ${newStudent.name} เรียบร้อยแล้ว`);
   };
 
@@ -259,7 +344,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const saveAssessment = (assessment: Assessment) => {
-    // อัพเดต assessment ที่มีอยู่แล้วแทนการเพิ่มใหม่
     setAssessments(prev =>
       prev.map(a =>
         a.id === assessment.id ? assessment : a
@@ -269,8 +353,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     showToast.success(`บันทึกผลการประเมินของ ${assessment.studentName} เรียบร้อยแล้ว`);
   };
 
-
-  // Excel Import Functions แก้ไขใหม่
+  // Excel Import Functions
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -292,15 +375,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setExcelSheets(workbook.SheetNames);
       setShowImportDialog(true);
 
-      // ใช้ custom toast utilities
       showToast.success('อ่านไฟล์ Excel เรียบร้อยแล้ว');
     } catch (error) {
       console.error('Error reading Excel file:', error);
-      // ใช้ custom toast utilities
       showToast.error('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel');
     } finally {
       setIsProcessingFile(false);
-      // Reset file input เพื่อให้สามารถเลือกไฟล์เดิมได้อีก
       if (event.target) {
         event.target.value = '';
       }
@@ -333,63 +413,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setPreviewData(preview);
       setSelectedSheet(sheetName);
 
-      // ใช้ custom toast utilities
       showToast.info(`แสดงตัวอย่างข้อมูลจาก Sheet: ${sheetName}`);
     } catch (error) {
       console.error('Error previewing sheet data:', error);
-      // ใช้ custom toast utilities
       showToast.error('เกิดข้อผิดพลาดในการแสดงตัวอย่างข้อมูล');
     }
   };
-const getOrCreateAssessment = (student: Student): Assessment => {
-  // ตรวจสอบก่อนว่ากำลังสร้างอยู่หรือไม่
-  if (createdAssessments.current.has(student.id)) {
-    // รอให้ state update
-    return assessments.find(a => a.studentId === student.id && !a.completed)!;
-  }
 
-  let existingAssessment = assessments.find(a =>
-    a.studentId === student.id && !a.completed
-  );
-
-  if (!existingAssessment) {
-    createdAssessments.current.add(student.id);
-    
-    existingAssessment = {
-      id: Date.now() + Math.random(), // ทำให้ unique มากขึ้น
-      studentId: student.id,
-      studentName: student.name,
-      classroomId: student.classroomId,
-      date: new Date().toISOString().split('T')[0],
-      responses: {},
-      impactResponses: { hasProblems: -1 },
-      completed: false
-    };
-
-    setAssessments(prev => [...prev, existingAssessment!]);
-    
-    // เคลียร์หลังจากสร้างเสร็จ
-    setTimeout(() => {
-      createdAssessments.current.delete(student.id);
-    }, 100);
-  }
-
-  return existingAssessment;
-};
-
-  const getAssessmentByStudentId = (studentId: number): Assessment | null => {
-    return assessments.find(a =>
-      a.studentId === studentId && !a.completed
-    ) || null;
-  };
-
-  const updateAssessment = (updatedAssessment: Assessment) => {
-    setAssessments(prev =>
-      prev.map(a =>
-        a.id === updatedAssessment.id ? updatedAssessment : a
-      )
-    );
-  };
   const importStudentsFromExcel = () => {
     if (!excelFile || !selectedSheet) return;
 
@@ -423,11 +453,9 @@ const getOrCreateAssessment = (student: Student): Assessment => {
       const uniqueNewStudents = newStudents.filter(s => !existingIds.includes(s.studentId));
 
       if (uniqueNewStudents.length === 0) {
-        // ใช้ custom toast utilities
         showToast.warning('ไม่มีข้อมูลนักเรียนใหม่ที่ต้องนำเข้า (ข้อมูลทั้งหมดมีอยู่แล้ว)');
       } else {
         setStudents([...students, ...uniqueNewStudents]);
-        // ใช้ custom toast utilities
         showToast.success(`นำเข้าข้อมูลลงในห้อง ${getCurrentClassroom().name} สำเร็จ!`,
           `เพิ่มนักเรียนใหม่ ${uniqueNewStudents.length} คน`);
       }
@@ -440,12 +468,11 @@ const getOrCreateAssessment = (student: Student): Assessment => {
       setPreviewData([]);
     } catch (error) {
       console.error('Error importing students:', error);
-      // ใช้ custom toast utilities
       showToast.error('เกิดข้อผิดพลาดในการนำเข้าข้อมูล', (error as Error).message);
     }
   };
 
-  // Context Value
+  // ✅ Context Value - เพิ่ม functions ใหม่ทั้งหมด
   const value: AppContextType = {
     // State
     classrooms,
@@ -463,6 +490,14 @@ const getOrCreateAssessment = (student: Student): Assessment => {
     showClassroomDialog,
     showClassroomDropdown,
 
+    // Assessment Management Functions
+    getOrCreateAssessment,
+    getAssessmentByStudentId,
+    getCompletedAssessmentByStudentId, // ✅ เพิ่ม
+    getStudentAssessmentStatus, // ✅ เพิ่ม
+    addAssessment, // ✅ เพิ่ม
+    updateAssessment,
+
     // Actions
     setCurrentClassroom,
     addClassroom,
@@ -479,9 +514,6 @@ const getOrCreateAssessment = (student: Student): Assessment => {
     setShowImportDialog,
     setShowClassroomDialog,
     setShowClassroomDropdown,
-    getOrCreateAssessment,
-    getAssessmentByStudentId,
-    updateAssessment,
     
     // Helper Functions
     getCurrentClassroom,
