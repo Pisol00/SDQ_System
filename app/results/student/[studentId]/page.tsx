@@ -3,7 +3,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, User, Calendar, TrendingUp, FileText, BarChart3 } from 'lucide-react';
 import { useApp } from '../../../../contexts/AppContext';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import SimpleTrendChart from '../../../../components/TrendChart'; // เพิ่ม import
 
 interface StudentResultsPageProps {
   params: {
@@ -115,7 +115,7 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
               <div className="flex gap-3">
                 <button
                   onClick={() => router.push('/results')}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm"
+                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm cursor-pointer"
                 >
                   ดูรายการทั้งหมด
                 </button>
@@ -124,7 +124,7 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
                     // Start new assessment for this student
                     router.push(`/students`);
                   }}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer"
                 >
                   ประเมินใหม่
                 </button>
@@ -208,53 +208,8 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
               </div>
             </div>
 
-            {/* Trend Chart */}
-            {studentAssessments.length > 1 && (
-              <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <h2 className="text-xl font-semibold text-slate-800 mb-6">แนวโน้มคะแนน</h2>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={trendData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="assessment" />
-                      <YAxis />
-                      <Tooltip 
-                        formatter={(value: any, name: string) => {
-                          const nameMap: Record<string, string> = {
-                            emotional: 'อารมณ์',
-                            conduct: 'ประพฤติ', 
-                            hyperactivity: 'ไม่อยู่นิ่ง',
-                            peer: 'เพื่อน',
-                            totalDifficulties: 'ปัญหารวม',
-                            prosocial: 'ช่วยเหลือสังคม'
-                          };
-                          return [value, nameMap[name] || name];
-                        }}
-                      />
-                      <Legend 
-                        formatter={(value: string) => {
-                          const nameMap: Record<string, string> = {
-                            emotional: 'อารมณ์',
-                            conduct: 'ประพฤติ', 
-                            hyperactivity: 'ไม่อยู่นิ่ง',
-                            peer: 'เพื่อน',
-                            totalDifficulties: 'ปัญหารวม',
-                            prosocial: 'ช่วยเหลือสังคม'
-                          };
-                          return nameMap[value] || value;
-                        }}
-                      />
-                      <Line type="monotone" dataKey="emotional" stroke="#ef4444" strokeWidth={2} />
-                      <Line type="monotone" dataKey="conduct" stroke="#f97316" strokeWidth={2} />
-                      <Line type="monotone" dataKey="hyperactivity" stroke="#eab308" strokeWidth={2} />
-                      <Line type="monotone" dataKey="peer" stroke="#8b5cf6" strokeWidth={2} />
-                      <Line type="monotone" dataKey="totalDifficulties" stroke="#1f2937" strokeWidth={3} />
-                      <Line type="monotone" dataKey="prosocial" stroke="#10b981" strokeWidth={2} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
+            {/* SimpleTrendChart Component - แทนที่กราฟเดิม */}
+            <SimpleTrendChart trendData={trendData} />
 
             {/* Assessment History */}
             <div className="bg-white rounded-lg border border-slate-200 p-6">
@@ -329,7 +284,7 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
                         
                         <button
                           onClick={() => router.push(`/results/${assessment.id}`)}
-                          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                          className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
                         >
                           ดูรายละเอียด
                         </button>

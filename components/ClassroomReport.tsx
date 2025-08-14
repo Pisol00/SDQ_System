@@ -99,7 +99,7 @@ const ClassroomReport: React.FC<ClassroomReportProps> = ({
       จำนวน: reportData.totalDifficultiesCount.ปกติ
     },
     {
-      name: 'เสี่ยง/มีปัญหา',
+      name: 'เสี่ยง',
       จำนวน: reportData.totalDifficultiesCount.เสี่ยง + reportData.totalDifficultiesCount.มีปัญหา
     },
     {
@@ -344,7 +344,7 @@ const ClassroomReport: React.FC<ClassroomReportProps> = ({
                   <div className="text-lg font-bold text-slate-800">{reportData.totalDifficultiesCount.ปกติ}</div>
                 </div>
                 <div className="bg-yellow-100 p-2 rounded text-center">
-                  <div className="font-semibold text-slate-800">เสี่ยง/มีปัญหา</div>
+                  <div className="font-semibold text-slate-800">เสี่ยง</div>
                   <div className="text-lg font-bold text-slate-800">{reportData.totalDifficultiesCount.เสี่ยง + reportData.totalDifficultiesCount.มีปัญหา}</div>
                 </div>
                 <div className="bg-red-100 p-2 rounded text-center">
@@ -361,7 +361,7 @@ const ClassroomReport: React.FC<ClassroomReportProps> = ({
                   <tr className="bg-slate-100">
                     <th className="border border-slate-400 px-4 py-2 text-left text-slate-800 font-semibold text-sm">พฤติกรรม</th>
                     <th className="border border-slate-400 px-4 py-2 text-center text-slate-800 font-semibold text-sm">ปกติ</th>
-                    <th className="border border-slate-400 px-4 py-2 text-center text-slate-800 font-semibold text-sm">เสี่ยง/มีปัญหา</th>
+                    <th className="border border-slate-400 px-4 py-2 text-center text-slate-800 font-semibold text-sm">เสี่ยง</th>
                     <th className="border border-slate-400 px-4 py-2 text-center text-slate-800 font-semibold text-sm">มีปัญหา</th>
                   </tr>
                 </thead>
