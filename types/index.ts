@@ -68,3 +68,11 @@ export interface PreviewStudent {
   age: string | number;
   gender: string;
 }
+
+export interface AssessmentStatus {
+  status: 'completed' | 'pending-impact' | 'in-progress' | 'not-started';
+  label: string;
+  color: string;
+  date: string;
+  progress?: string;
+}

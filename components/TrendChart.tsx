@@ -69,9 +69,9 @@ const SimpleTrendChart: React.FC<SimpleTrendChartProps> = ({ trendData }) => {
                         {`${currentMetric.name}: ${payload[0].value} คะแนน`}
                     </p>
                     <div className="mt-2 text-xs">
-                        <p className="text-green-600">✓ ปกติ: 0-{currentMetric.normalRange}</p>
-                        <p className="text-yellow-600">⚠ เสี่ยง: {currentMetric.normalRange + 1}-{currentMetric.riskRange}</p>
-                        <p className="text-red-600">⚠ มีปัญหา: {currentMetric.riskRange + 1}+</p>
+                        <p className="text-green-600">ปกติ: 0-{currentMetric.normalRange}</p>
+                        <p className="text-yellow-600">เสี่ยง: {currentMetric.normalRange + 1}-{currentMetric.riskRange}</p>
+                        <p className="text-red-600">มีปัญหา: {currentMetric.riskRange + 1}+</p>
                     </div>
                 </div>
             );
@@ -112,9 +112,9 @@ const SimpleTrendChart: React.FC<SimpleTrendChartProps> = ({ trendData }) => {
         );
     }
 
-    const latestScore = trendData[trendData.length - 1][selectedMetric as keyof typeof trendData[0]];
+    const latestScore = Number(trendData[trendData.length - 1][selectedMetric as keyof typeof trendData[0]]) || 0;
     const latestInterpretation = getInterpretation(latestScore);
-    const improvement = trendData[0][selectedMetric as keyof typeof trendData[0]] - latestScore;
+    const improvement = (Number(trendData[0][selectedMetric as keyof typeof trendData[0]]) || 0) - latestScore;
 
     return (
         <div className="bg-white rounded-lg border border-slate-200 p-6">

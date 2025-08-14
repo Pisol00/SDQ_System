@@ -83,23 +83,28 @@ interface AppContextType {
   currentClassroom: number;
   students: Student[];
   assessments: Assessment[];
-  
+
   // Current Assessment
   currentAssessment: Assessment | null;
   selectedStudent: Student | null;
-  
+
   // Excel Import
   excelFile: any;
   excelSheets: string[];
   selectedSheet: string;
   previewData: PreviewStudent[];
   isProcessingFile: boolean;
-  
+
   // Dialog States
   showImportDialog: boolean;
   showClassroomDialog: boolean;
   showClassroomDropdown: boolean;
-  
+
+  // New functions for dynamic assessment
+  getOrCreateAssessment: (student: Student) => Assessment;
+  getAssessmentByStudentId: (studentId: number) => Assessment | null;
+  updateAssessment: (assessment: Assessment) => void;
+
   // Actions
   setCurrentClassroom: (id: number) => void;
   addClassroom: (classroom: Omit<Classroom, 'id' | 'createdDate'>) => void;
@@ -108,19 +113,19 @@ interface AppContextType {
   saveAssessment: (assessment: Assessment) => void;
   setCurrentAssessment: (assessment: Assessment | null) => void;
   setSelectedStudent: (student: Student | null) => void;
-  
+
   // Excel Import Actions
   setExcelFile: (file: any) => void;
   setExcelSheets: (sheets: string[]) => void;
   setSelectedSheet: (sheet: string) => void;
   setPreviewData: (data: PreviewStudent[]) => void;
   setIsProcessingFile: (processing: boolean) => void;
-  
+
   // Dialog Actions
   setShowImportDialog: (show: boolean) => void;
   setShowClassroomDialog: (show: boolean) => void;
   setShowClassroomDropdown: (show: boolean) => void;
-  
+
   // Helper Functions
   getCurrentClassroom: () => Classroom;
   getClassroomStudents: () => Student[];
@@ -151,18 +156,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [currentClassroom, setCurrentClassroom] = useState<number>(1);
   const [students, setStudents] = useState<Student[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
-  
+
   // Current Assessment State
   const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  
+
   // Excel Import State
   const [excelFile, setExcelFile] = useState<any>(null);
   const [excelSheets, setExcelSheets] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState('');
   const [previewData, setPreviewData] = useState<PreviewStudent[]>([]);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
-  
+
   // Dialog States
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showClassroomDialog, setShowClassroomDialog] = useState(false);
@@ -229,7 +234,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setClassrooms([...classrooms, newClassroom]);
     setCurrentClassroom(newClassroom.id);
     setShowClassroomDialog(false);
-    
+
     // ใช้ custom toast utilities
     showToast.success(`เพิ่มห้องเรียน ${newClassroom.name} เรียบร้อยแล้ว`);
   };
@@ -243,37 +248,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       createdDate: new Date().toISOString()
     };
     setStudents([...students, newStudent]);
-    
+
     // ใช้ custom toast utilities
     showToast.success(`เพิ่มนักเรียน ${newStudent.name} เรียบร้อยแล้ว`);
   };
 
   const startNewAssessment = (student: Student) => {
-    const newAssessment: Assessment = {
-      id: Date.now(),
-      studentId: student.id,
-      studentName: student.name,
-      classroomId: student.classroomId,
-      date: new Date().toISOString().split('T')[0],
-      responses: {},
-      impactResponses: { hasProblems: -1 },
-      completed: false
-    };
-    setCurrentAssessment(newAssessment);
-    setSelectedStudent(student);
-    
-    // ใช้ custom toast utilities
     showToast.info(`เริ่มประเมิน SDQ สำหรับ ${student.name}`);
   };
 
   const saveAssessment = (assessment: Assessment) => {
-    setAssessments([...assessments, assessment]);
-    setCurrentAssessment(null);
-    setSelectedStudent(null);
-    
-    // ใช้ custom toast utilities
+    // อัพเดต assessment ที่มีอยู่แล้วแทนการเพิ่มใหม่
+    setAssessments(prev =>
+      prev.map(a =>
+        a.id === assessment.id ? assessment : a
+      )
+    );
+
     showToast.success(`บันทึกผลการประเมินของ ${assessment.studentName} เรียบร้อยแล้ว`);
   };
+
 
   // Excel Import Functions แก้ไขใหม่
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -282,7 +276,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setIsProcessingFile(true);
     const loadingId = showToast.loading('กำลังประมวลผลไฟล์ Excel...');
-    
+
     try {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, {
@@ -296,7 +290,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setExcelFile(workbook);
       setExcelSheets(workbook.SheetNames);
       setShowImportDialog(true);
-      
+
       // ใช้ custom toast utilities
       showToast.success('อ่านไฟล์ Excel เรียบร้อยแล้ว');
     } catch (error) {
@@ -337,7 +331,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
       setPreviewData(preview);
       setSelectedSheet(sheetName);
-      
+
       // ใช้ custom toast utilities
       showToast.info(`แสดงตัวอย่างข้อมูลจาก Sheet: ${sheetName}`);
     } catch (error) {
@@ -347,6 +341,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const getOrCreateAssessment = (student: Student): Assessment => {
+    // หา assessment ที่ยังไม่เสร็จของนักเรียนคนนี้
+    let existingAssessment = assessments.find(a =>
+      a.studentId === student.id && !a.completed
+    );
+
+    if (!existingAssessment) {
+      // สร้าง assessment ใหม่
+      existingAssessment = {
+        id: Date.now(),
+        studentId: student.id,
+        studentName: student.name,
+        classroomId: student.classroomId,
+        date: new Date().toISOString().split('T')[0],
+        responses: {},
+        impactResponses: { hasProblems: -1 },
+        completed: false
+      };
+
+      // เพิ่มลง state (แต่ยังไม่ save ถาวร)
+      setAssessments(prev => [...prev, existingAssessment!]);
+    }
+
+    return existingAssessment;
+  };
+
+  const getAssessmentByStudentId = (studentId: number): Assessment | null => {
+    return assessments.find(a =>
+      a.studentId === studentId && !a.completed
+    ) || null;
+  };
+
+  const updateAssessment = (updatedAssessment: Assessment) => {
+    setAssessments(prev =>
+      prev.map(a =>
+        a.id === updatedAssessment.id ? updatedAssessment : a
+      )
+    );
+  };
   const importStudentsFromExcel = () => {
     if (!excelFile || !selectedSheet) return;
 
@@ -385,10 +418,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       } else {
         setStudents([...students, ...uniqueNewStudents]);
         // ใช้ custom toast utilities
-        showToast.success(`นำเข้าข้อมูลลงในห้อง ${getCurrentClassroom().name} สำเร็จ!`, 
+        showToast.success(`นำเข้าข้อมูลลงในห้อง ${getCurrentClassroom().name} สำเร็จ!`,
           `เพิ่มนักเรียนใหม่ ${uniqueNewStudents.length} คน`);
       }
-      
+
       // รีเซ็ตทุกอย่างหลังจากเสร็จสิ้น
       setShowImportDialog(false);
       setExcelFile(null);
@@ -436,7 +469,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setShowImportDialog,
     setShowClassroomDialog,
     setShowClassroomDropdown,
-
+    getOrCreateAssessment,
+    getAssessmentByStudentId,
+    updateAssessment,
+    
     // Helper Functions
     getCurrentClassroom,
     getClassroomStudents,

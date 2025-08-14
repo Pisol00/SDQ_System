@@ -56,8 +56,7 @@ const StudentsPage: React.FC = () => {
   };
 
   const handleStartAssessment = (student: any) => {
-    startNewAssessment(student);
-    router.push('/assessment');
+    router.push(`/assessment/${student.id}`);
   };
 
   const handleViewStudentHistory = (student: any) => {

@@ -1,14 +1,15 @@
+// app/results/student/[studentId]/page.tsx
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, User, Calendar, TrendingUp, FileText, BarChart3 } from 'lucide-react';
 import { useApp } from '../../../../contexts/AppContext';
-import SimpleTrendChart from '../../../../components/TrendChart'; // เพิ่ม import
+import SimpleTrendChart from '../../../../components/TrendChart';
 
 interface StudentResultsPageProps {
-  params: {
+  params: Promise<{
     studentId: string;
-  };
+  }>;
 }
 
 const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
@@ -16,9 +17,12 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
   const { students, assessments, getCurrentClassroom } = useApp();
   const currentClassroom = getCurrentClassroom();
   
-  const student = students.find(s => s.id.toString() === params.studentId);
+  // Unwrap params using React.use()
+  const { studentId } = React.use(params);
+  
+  const student = students.find(s => s.id.toString() === studentId);
   const studentAssessments = assessments
-    .filter(a => a.studentId.toString() === params.studentId)
+    .filter(a => a.studentId.toString() === studentId)
     .sort((a, b) => new Date(a.completedDate || '').getTime() - new Date(b.completedDate || '').getTime());
 
   if (!student) {
@@ -121,7 +125,6 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
                 </button>
                 <button
                   onClick={() => {
-                    // Start new assessment for this student
                     router.push(`/students`);
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm cursor-pointer"
@@ -134,12 +137,11 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
         </div>
 
         {studentAssessments.length === 0 ? (
-          /* No Assessments */
           <div className="bg-white rounded-lg border border-slate-200 p-6">
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-slate-800 mb-2">ยังไม่มีผลการประเมิน</h2>
-              <p className="text-slate-500 mb-4">นักเรียนคนนี้ยังไม่เคยได้รับการประเมิน SDQ</p>
+              <h2 className="text-xl font-semibold text-slate-800 mb-2">ยังไม่มีประวัติการประเมิน</h2>
+              <p className="text-slate-500 mb-4">นักเรียนคนนี้ยังไม่เคยถูกประเมินด้วย SDQ</p>
               <button
                 onClick={() => router.push('/students')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -149,9 +151,8 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
             </div>
           </div>
         ) : (
-          /* Has Assessments */
           <div className="space-y-6">
-            {/* Summary Stats */}
+            {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white p-4 rounded-lg border border-slate-200">
                 <div className="flex items-center gap-3">
@@ -168,10 +169,10 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
               <div className="bg-white p-4 rounded-lg border border-slate-200">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    <Calendar className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-slate-600">ประเมินล่าสุด</p>
+                    <p className="text-sm text-slate-600">ประเมินครั้งล่าสุด</p>
                     <p className="text-sm font-medium text-slate-800">
                       {new Date(studentAssessments[studentAssessments.length - 1]?.completedDate || '').toLocaleDateString('th-TH')}
                     </p>
@@ -213,25 +214,26 @@ const StudentResultsPage: React.FC<StudentResultsPageProps> = ({ params }) => {
 
             {/* Assessment History */}
             <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <h2 className="text-xl font-semibold text-slate-800 mb-6">ประวัติการประเมิน</h2>
+              <h2 className="text-xl font-semibold text-slate-800 mb-6">ประวัติการประเมินทั้งหมด</h2>
               
               <div className="space-y-4">
                 {studentAssessments.map((assessment, index) => (
-                  <div key={assessment.id} className={`border rounded-lg p-4 ${getScoreBg(assessment.interpretations?.totalDifficulties || '')}`}>
+                  <div 
+                    key={assessment.id} 
+                    className={`border rounded-lg p-4 ${getScoreBg(assessment.interpretations?.totalDifficulties || '')}`}
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="font-medium text-slate-800">ครั้งที่ {index + 1}</span>
-                          <span className="text-sm text-slate-600">
-                            {new Date(assessment.completedDate || '').toLocaleDateString('th-TH', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
+                          <span className="font-medium text-slate-800">
+                            การประเมินครั้งที่ {index + 1}
+                          </span>
+                          <span className="text-sm text-slate-500">
+                            {new Date(assessment.completedDate || '').toLocaleDateString('th-TH')}
                           </span>
                         </div>
                         
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-sm">
                           <div>
                             <span className="text-slate-600">อารมณ์:</span>
                             <span className={`ml-1 font-medium ${getScoreColor(assessment.interpretations?.emotional || '')}`}>

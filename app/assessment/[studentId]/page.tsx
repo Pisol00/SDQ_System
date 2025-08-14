@@ -1,22 +1,48 @@
+// app/assessment/[studentId]/page.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useApp } from '../../contexts/AppContext';
-import { sdqQuestions, responseOptions } from '../../constants/sdqQuestions';
+import { useApp } from '@/contexts/AppContext';
+import { sdqQuestions, responseOptions } from '@/constants/sdqQuestions';
 import { toast } from 'sonner';
 
-const AssessmentPage: React.FC = () => {
-  const router = useRouter();
-  const { currentAssessment, setCurrentAssessment, getCurrentClassroom } = useApp();
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+interface AssessmentPageProps {
+  params: Promise<{
+    studentId: string;
+  }>;
+}
 
-  // Redirect if no current assessment
+const AssessmentPage: React.FC<AssessmentPageProps> = ({ params }) => {
+  const router = useRouter();
+  const { 
+    students, 
+    assessments, 
+    getCurrentClassroom,
+    getOrCreateAssessment,
+    updateAssessment 
+  } = useApp();
+  
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [currentAssessment, setCurrentAssessmentLocal] = useState<any>(null);
+  const [student, setStudent] = useState<any>(null);
+
+  // Unwrap params
+  const { studentId } = React.use(params);
+
+  // Load student and assessment data
   useEffect(() => {
-    if (!currentAssessment) {
+    const foundStudent = students.find(s => s.id.toString() === studentId);
+    if (!foundStudent) {
       router.push('/students');
       return;
     }
-  }, [currentAssessment, router]);
+
+    setStudent(foundStudent);
+
+    // Get or create assessment for this student
+    const assessment = getOrCreateAssessment(foundStudent);
+    setCurrentAssessmentLocal(assessment);
+  }, [studentId, students, getOrCreateAssessment, router]);
 
   // Prevent navigation away from assessment
   useEffect(() => {
@@ -56,20 +82,30 @@ const AssessmentPage: React.FC = () => {
     };
   }, []);
 
-  if (!currentAssessment) {
-    return null; // Will redirect
+  if (!currentAssessment || !student) {
+    return (
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">กำลังโหลด...</p>
+        </div>
+      </div>
+    );
   }
 
   const currentQuestion = sdqQuestions[currentQuestionIndex];
   
   const handleResponse = (value: number) => {
-    setCurrentAssessment({
+    const updatedAssessment = {
       ...currentAssessment,
       responses: {
         ...currentAssessment.responses,
         [currentQuestion.id]: value
       }
-    });
+    };
+    
+    setCurrentAssessmentLocal(updatedAssessment);
+    updateAssessment(updatedAssessment);
   };
 
   const nextQuestion = () => {
@@ -86,7 +122,7 @@ const AssessmentPage: React.FC = () => {
 
   const moveToImpactAssessment = () => {
     toast.success('SDQ เสร็จสิ้น กำลังไปยังคำถามเพิ่มเติม');
-    router.push('/assessment/impact');
+    router.push(`/assessment/${studentId}/impact`);
   };
 
   const isLastQuestion = currentQuestionIndex === sdqQuestions.length - 1;
@@ -103,7 +139,7 @@ const AssessmentPage: React.FC = () => {
               <h1 className="text-3xl font-bold text-slate-800 mb-2">แบบประเมิน SDQ</h1>
               <div className="text-slate-600 space-y-1 sm:space-y-0">
                 <p className="sm:inline">
-                  <span className="font-medium">นักเรียน:</span> {currentAssessment.studentName}
+                  <span className="font-medium">นักเรียน:</span> {student.name}
                 </p>
                 <p className="sm:inline sm:ml-4">
                   <span className="font-medium">ห้อง:</span> {getCurrentClassroom().name}
