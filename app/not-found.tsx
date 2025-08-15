@@ -118,23 +118,6 @@ const NotFoundPage: React.FC = () => {
             );
           })}
         </div>
-
-        {/* Help Section */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 text-center">
-          <h3 className="text-lg font-semibold text-slate-900 mb-3">
-            ต้องการความช่วยเหลือ?
-          </h3>
-          <p className="text-slate-600 mb-4">
-            หากคุณคิดว่านี่เป็นข้อผิดพลาด โปรดติดต่อผู้ดูแลระบบ
-            <br />
-            หรือลองใช้เมนูหลักเพื่อไปยังหน้าที่ต้องการ
-          </p>
-          <div className="inline-flex items-center text-sm text-slate-500">
-            <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-            ระบบประเมิน SDQ พร้อมใช้งาน
-          </div>
-        </div>
-
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-slate-500">
           <p>ระบบประเมินพฤติกรรมนักเรียน (SDQ) - Student Assessment System</p>

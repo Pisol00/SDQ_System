@@ -1,4 +1,3 @@
-// แก้ไข app/assessment/[studentId]/page.tsx
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -51,30 +50,11 @@ const AssessmentPage: React.FC<AssessmentPageProps> = ({ params }) => {
       return;
     }
 
-    // ถ้าไม่มี assessment ที่เสร็จแล้ว ให้หา assessment ที่ยังไม่เสร็จ หรือสร้างใหม่
-    let inProgressAssessment = assessments.find(a =>
-      a.studentId === foundStudent.id && !a.completed
-    );
+    // ✅ ใช้ getOrCreateAssessment แทนการสร้างเอง
+    const assessment = getOrCreateAssessment(foundStudent);
+    setCurrentAssessmentLocal(assessment);
 
-    if (!inProgressAssessment) {
-      // สร้าง assessment ใหม่
-      inProgressAssessment = {
-        id: Date.now() + Math.random(),
-        studentId: foundStudent.id,
-        studentName: foundStudent.name,
-        classroomId: foundStudent.classroomId,
-        date: new Date().toISOString().split('T')[0],
-        responses: {},
-        impactResponses: { hasProblems: -1 },
-        completed: false
-      };
-
-      // เพิ่ม assessment ใหม่ใน context
-      updateAssessment(inProgressAssessment);
-    }
-
-    setCurrentAssessmentLocal(inProgressAssessment);
-  }, [studentId, students, assessments, router, updateAssessment]);
+  }, [studentId, students, assessments, router, getOrCreateAssessment]);
 
   // Prevent navigation away from assessment
   useEffect(() => {
@@ -161,17 +141,14 @@ const AssessmentPage: React.FC<AssessmentPageProps> = ({ params }) => {
   const progress = ((currentQuestionIndex + (isAnswered ? 1 : 0)) / sdqQuestions.length) * 100;
 
   const handleFinishSDQ = () => {
-    if (!allQuestionsAnswered) {
-      toast.error('กรุณาตอบคำถามให้ครบทุกข้อ');
-      return;
+    if (allQuestionsAnswered) {
+      router.push(`/assessment/${studentId}/impact`);
     }
-
-    router.push(`/assessment/${studentId}/impact`);
   };
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="bg-white rounded-lg border border-slate-200 p-6">
@@ -186,42 +163,46 @@ const AssessmentPage: React.FC<AssessmentPageProps> = ({ params }) => {
                 </p>
               </div>
             </div>
+            
+            {/* Progress Bar */}
+            <div className="mt-6">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm font-medium text-slate-600">ความคืบหน้า</span>
+                <span className="text-sm text-slate-500">{Math.round(progress)}%</span>
+              </div>
+              <div className="w-full bg-slate-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Question Card */}
-        <div className="bg-white rounded-lg border border-slate-200 p-6 hover:shadow-md transition-shadow duration-200">
-          {/* Progress Section */}
+        {/* Question */}
+        <div className="bg-white rounded-lg border border-slate-200 p-6">
           <div className="mb-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2">
-              <span className="text-sm font-medium text-slate-600">
-                คำถามที่ {currentQuestionIndex + 1} จาก {sdqQuestions.length}
-              </span>
-              <span className="text-sm font-medium text-slate-600">
-                {Math.round(progress)}%
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-slate-800">
+                คำถามที่ {currentQuestionIndex + 1}
+              </h2>
+              <span className="text-sm text-slate-500">
+                {currentQuestionIndex + 1} จาก {sdqQuestions.length}
               </span>
             </div>
-            <div className="w-full bg-slate-200 rounded-full h-2">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              ></div>
-            </div>
-          </div>
-
-          {/* Question Section */}
-          <div className="mb-8">
-            <h2 className="text-lg sm:text-xl font-medium text-slate-800 mb-6 leading-relaxed">
+            
+            <p className="text-lg text-slate-700 leading-relaxed mb-6">
               {currentQuestion.text}
-            </h2>
+            </p>
 
-            {/* Options */}
+            {/* Answer Options */}
             <div className="space-y-3">
               {responseOptions.map((option) => (
                 <button
                   key={option.value}
                   onClick={() => handleResponse(option.value)}
-                  className={`w-full p-4 text-left border-2 rounded-lg transition-all duration-200 active:scale-95 ${currentAssessment.responses[currentQuestion.id] === option.value
+                  className={`w-full p-4 rounded-lg border-2 transition-all ${currentAssessment.responses[currentQuestion.id] === option.value
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
                     : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}

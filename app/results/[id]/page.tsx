@@ -6,9 +6,9 @@ import { useApp } from '../../../contexts/AppContext';
 import ScoreCard from '../../../components/ScoreCard';
 
 interface AssessmentDetailsPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 const AssessmentDetailsPage: React.FC<AssessmentDetailsPageProps> = ({ params }) => {
@@ -16,7 +16,9 @@ const AssessmentDetailsPage: React.FC<AssessmentDetailsPageProps> = ({ params })
   const { assessments, getCurrentClassroom } = useApp();
   const currentClassroom = getCurrentClassroom();
   
-  const assessment = assessments.find(a => a.id.toString() === params.id);
+  // Unwrap params using React.use()
+  const { id } = React.use(params);
+  const assessment = assessments.find(a => a.id.toString() === id);
 
   // ข้อมูลคำถามเพิ่มเติม (impact questions) - คุณอาจต้องย้ายไปไฟล์ constants
   const impactQuestions = {
@@ -77,6 +79,68 @@ const AssessmentDetailsPage: React.FC<AssessmentDetailsPageProps> = ({ params })
     ]
   };
 
+  const RecommendationCard = ({ interpretation, type }: { interpretation: string; type: string }) => {
+    const getRecommendation = () => {
+      if (type === 'total') {
+        switch (interpretation) {
+          case 'ปกติ':
+            return {
+              title: "ภาพรวม: ปกติ",
+              message: "นักเรียนมีพัฒนาการที่ดี ควรสนับสนุนต่อไป",
+              color: "green"
+            };
+          case 'เสี่ยง':
+            return {
+              title: "ภาพรวม: เสี่ยง",
+              message: "ควรติดตามอย่างใกล้ชิดและให้การสนับสนุน",
+              color: "yellow"
+            };
+          case 'มีปัญหา':
+            return {
+              title: "ภาพรวม: มีปัญหา",
+              message: "ควรได้รับการช่วยเหลือจากผู้เชี่ยวชาญ",
+              color: "red"
+            };
+          default:
+            return {
+              title: "ไม่มีข้อมูล",
+              message: "ยังไม่มีการประเมิน",
+              color: "gray"
+            };
+        }
+      }
+      return { title: "", message: "", color: "gray" };
+    };
+
+    const rec = getRecommendation();
+    
+    return (
+      <div className={`p-4 rounded-lg border ${
+        rec.color === 'green' ? 'bg-green-50 border-green-200' :
+        rec.color === 'yellow' ? 'bg-yellow-50 border-yellow-200' :
+        rec.color === 'red' ? 'bg-red-50 border-red-200' :
+        'bg-gray-50 border-gray-200'
+      }`}>
+        <h4 className={`font-medium text-sm mb-2 ${
+          rec.color === 'green' ? 'text-green-800' :
+          rec.color === 'yellow' ? 'text-yellow-800' :
+          rec.color === 'red' ? 'text-red-800' :
+          'text-gray-800'
+        }`}>
+          {rec.title}
+        </h4>
+        <p className={`text-xs ${
+          rec.color === 'green' ? 'text-green-700' :
+          rec.color === 'yellow' ? 'text-yellow-700' :
+          rec.color === 'red' ? 'text-red-700' :
+          'text-gray-700'
+        }`}>
+          {rec.message}
+        </p>
+      </div>
+    );
+  };
+
   if (!assessment) {
     return (
       <div className="bg-gray-50 min-h-screen">
@@ -84,13 +148,13 @@ const AssessmentDetailsPage: React.FC<AssessmentDetailsPageProps> = ({ params })
           <div className="bg-white rounded-lg border border-slate-200 p-6">
             <div className="text-center py-12">
               <AlertTriangle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-slate-800 mb-2">ไม่พบผลการประเมิน</h2>
-              <p className="text-slate-500 mb-4">ผลการประเมินที่คุณต้องการดูอาจถูกลบแล้วหรือไม่มีอยู่</p>
+              <h2 className="text-xl font-semibold text-slate-800 mb-2">ไม่พบข้อมูลการประเมิน</h2>
+              <p className="text-slate-500 mb-4">การประเมินที่คุณต้องการดูอาจถูกลบแล้วหรือไม่มีอยู่</p>
               <button
-                onClick={() => router.push('/results')}
+                onClick={() => router.push('/students')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                กลับไปรายการผลการประเมิน
+                กลับไปรายการนักเรียน
               </button>
             </div>
           </div>
@@ -99,106 +163,52 @@ const AssessmentDetailsPage: React.FC<AssessmentDetailsPageProps> = ({ params })
     );
   }
 
-  const RecommendationCard = ({ interpretation, type }: { interpretation: string; type: string }) => {
-    if (interpretation === 'มีปัญหา') {
-      return (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-800 font-medium text-sm sm:text-base">ควรส่งต่อเพื่อการประเมินเพิ่มเติม</p>
-          <p className="text-red-700 text-xs sm:text-sm mt-1">
-            นักเรียนมีคะแนนในระดับที่ต้องได้รับการดูแลเป็นพิเศษ ควรปรึกษานักจิตวิทยาโรงเรียนหรือผู้เชี่ยวชาญ
-          </p>
-        </div>
-      );
-    }
-    
-    if (interpretation === 'เสี่ยง') {
-      return (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-yellow-800 font-medium text-sm sm:text-base">ควรติดตามอย่างใกล้ชิด</p>
-          <p className="text-yellow-700 text-xs sm:text-sm mt-1">
-            นักเรียนอยู่ในกลุ่มเสี่ยง ควรมีการติดตามและสังเกตพฤติกรรมอย่างต่อเนื่อง
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-        <p className="text-green-800 font-medium text-sm sm:text-base">อยู่ในเกณฑ์ปกติ</p>
-        <p className="text-green-700 text-xs sm:text-sm mt-1">
-          นักเรียนมีพัฒนาการทางจิตใจในเกณฑ์ปกติ ควรส่งเสริมจุดแข็งต่อไป
-        </p>
-      </div>
-    );
-  };
-
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <div className="bg-white rounded-lg border border-slate-200 p-6">
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 transition-colors text-sm sm:text-base"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              กลับ
-            </button>
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => router.back()}
+                className="flex items-center text-slate-600 hover:text-slate-800 transition-colors"
+              >
+                <ArrowLeft className="h-5 w-5 mr-2" />
+                กลับ
+              </button>
+            </div>
             
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">
-                  ผลการประเมิน SDQ
-                </h1>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-slate-600">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <span className="font-medium">{assessment.studentName}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>
-                      {new Date(assessment.completedDate || '').toLocaleDateString('th-TH', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>ห้อง {currentClassroom.name}</span>
-                  </div>
+            <div className="mt-4">
+              <h1 className="text-3xl font-bold text-slate-800 mb-2">ผลการประเมิน SDQ</h1>
+              <div className="flex flex-wrap gap-4 text-slate-600">
+                <div className="flex items-center">
+                  <User className="h-4 w-4 mr-1" />
+                  <span className="font-medium">นักเรียน:</span>
+                  <span className="ml-1">{assessment.studentName}</span>
                 </div>
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => router.push(`/results/student/${assessment.studentId}`)}
-                  className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm"
-                >
-                  ดูประวัติทั้งหมด
-                </button>
-                <button
-                  onClick={() => router.push('/results')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                >
-                  ดูรายการทั้งหมด
-                </button>
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  <span className="font-medium">วันที่ประเมิน:</span>
+                  <span className="ml-1">{new Date(assessment.completedDate || assessment.date).toLocaleDateString('th-TH')}</span>
+                </div>
+                <div className="flex items-center">
+                  <BarChart3 className="h-4 w-4 mr-1" />
+                  <span className="font-medium">ห้อง:</span>
+                  <span className="ml-1">{currentClassroom.name}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Scores Section */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* SDQ Scores */}
+          {/* Results Section */}
+          <div className="lg:col-span-2">
             <div className="bg-white rounded-lg border border-slate-200 p-6">
-              <h2 className="text-xl font-semibold text-slate-800 mb-6">คะแนน SDQ</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <h2 className="text-xl font-semibold text-slate-800 mb-6">คะแนนและการแปลผล</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <ScoreCard
                   title="ปัญหาทางอารมณ์"
                   score={assessment.scores?.emotional || 0}
@@ -220,62 +230,46 @@ const AssessmentDetailsPage: React.FC<AssessmentDetailsPageProps> = ({ params })
                   interpretation={assessment.interpretations?.peer || ''}
                 />
               </div>
-              
-              {/* Total Difficulties Score */}
-              <div className="mt-6 pt-6 border-t border-slate-200">
-                <div className="bg-slate-50 p-4 rounded-lg">
-                  <div className="text-center">
-                    <p className="text-slate-600 text-sm mb-2">คะแนนปัญหารวม</p>
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-3xl font-bold text-slate-800">
-                        {assessment.scores?.totalDifficulties}
-                      </span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        assessment.interpretations?.totalDifficulties === 'ปกติ' ? 'bg-green-100 text-green-800' :
-                        assessment.interpretations?.totalDifficulties === 'เสี่ยง' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {assessment.interpretations?.totalDifficulties}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Prosocial Score */}
-              <div className="mt-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <ScoreCard
-                  title="พฤติกรรมช่วยเหลือสังคม"
+                  title="พฤติกรรมช่วยเหลือ"
                   score={assessment.scores?.prosocial || 0}
                   interpretation={assessment.interpretations?.prosocial || ''}
+                />
+                <ScoreCard
+                  title="คะแนนรวมปัญหา"
+                  score={assessment.scores?.totalDifficulties || 0}
+                  interpretation={assessment.interpretations?.totalDifficulties || ''}
                 />
               </div>
             </div>
 
-            {/* Impact Assessment */}
-            {assessment.impactResponses && assessment.impactResponses.hasProblems !== -1 && (
-              <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-800 mb-4">การประเมินผลกระทบ</h3>
+            {/* Impact Assessment Results */}
+            {assessment.impactResponses && (
+              <div className="bg-white rounded-lg border border-slate-200 p-6 mt-6">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">ผลการประเมินผลกระทบ</h3>
                 
                 <div className="space-y-4">
-                  <div className="bg-slate-50 p-4 rounded-lg">
-                    <p className="text-sm text-slate-600 mb-2">
-                      {impactQuestions.mainQuestion.text}
-                    </p>
-                    <p className="font-medium text-slate-800">
-                      {assessment.impactResponses.hasProblems === 1 ? 'มีปัญหา' : 'ไม่มีปัญหา'}
+                  <div>
+                    <p className="font-medium text-slate-700 mb-2">{impactQuestions.mainQuestion.text}</p>
+                    <p className="text-slate-600 bg-slate-50 p-3 rounded-lg">
+                      <strong>คำตอบ:</strong> {assessment.impactResponses?.hasProblems === 1 ? 'มีปัญหา' : 'ไม่มีปัญหา'}
                     </p>
                   </div>
 
-                  {assessment.impactResponses.hasProblems === 1 && (
+                  {assessment.impactResponses?.hasProblems === 1 && (
                     <>
+                      <div className="border-t pt-4">
+                        <h4 className="font-medium text-slate-700 mb-3">คำถามเพิ่มเติม:</h4>
+                      </div>
                       {impactQuestions.followUpQuestions.map((question) => (
-                        <div key={question.id} className="bg-slate-50 p-4 rounded-lg">
-                          <p className="text-sm text-slate-600 mb-2">{question.text}</p>
-                          <p className="font-medium text-slate-800">
-                            {question.options.find(
-                              o => o.value === assessment.impactResponses?.[question.id as keyof typeof assessment.impactResponses]
-                            )?.label}
+                        <div key={question.id} className="bg-slate-50 p-3 rounded-lg">
+                          <p className="font-medium text-slate-700 mb-2">{question.text}</p>
+                          <p className="text-slate-600">
+                            <strong>คำตอบ:</strong> {question.options.find(opt => 
+                              opt.value === assessment.impactResponses?.[question.id as keyof typeof assessment.impactResponses]
+                            )?.label || 'ไม่มีข้อมูล'}
                           </p>
                         </div>
                       ))}

@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, ClipboardList, BarChart3, Calendar, PieChart, AlertTriangle } from 'lucide-react';
+import { Users, ClipboardList, BarChart3, Calendar, PieChart, AlertTriangle, Trash2 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 
 const Dashboard: React.FC = () => {
@@ -9,7 +9,8 @@ const Dashboard: React.FC = () => {
   const {
     getCurrentClassroom,
     getClassroomStudents,
-    getClassroomAssessments
+    getClassroomAssessments,
+    cleanupDuplicateAssessments
   } = useApp();
 
   const classroomStudents = getClassroomStudents();
@@ -19,7 +20,7 @@ const Dashboard: React.FC = () => {
   // Calculate statistics
   const needFollowUp = classroomAssessments.filter(a =>
     a.interpretations?.totalDifficulties === 'มีปัญหา' ||
-    a.interpretations?.totalDifficulties === 'เส่ียง'
+    a.interpretations?.totalDifficulties === 'เสี่ยง'
   ).length;
 
   const thisMonth = classroomAssessments.filter(a =>
@@ -51,7 +52,7 @@ const Dashboard: React.FC = () => {
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="bg-white rounded-lg border border-slate-200  p-6">
+          <div className="bg-white rounded-lg border border-slate-200 p-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div>
                 <h1 className="text-3xl font-bold text-slate-800 mb-2">
@@ -62,7 +63,7 @@ const Dashboard: React.FC = () => {
               <div className="text-left lg:text-right">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center gap-1 mb-1">
-                    <p className="text-sm text-slate-600">ห้องเรียนปัจจุบัน </p>
+                    <p className="text-sm text-slate-600">ห้องเรียนปัจจุบัน</p>
                     <p className="text-sm text-blue-700">{currentClassroom.name}</p>
                   </div>
                   <div className="flex items-center gap-1 justify-end">
@@ -78,91 +79,80 @@ const Dashboard: React.FC = () => {
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
-            title="นักเรียนในห้อง"
+            title="นักเรียนทั้งหมด"
             value={classroomStudents.length}
             icon={Users}
             bgColor="bg-white"
-            iconColor="text-blue-600"
+            iconColor="text-blue-500"
           />
-
           <StatCard
-            title="การประเมินเสร็จแล้ว"
+            title="การประเมินทั้งหมด"
             value={classroomAssessments.length}
             icon={ClipboardList}
             bgColor="bg-white"
-            iconColor="text-green-600"
+            iconColor="text-green-500"
           />
-
           <StatCard
             title="ต้องติดตาม"
             value={needFollowUp}
             icon={AlertTriangle}
             bgColor="bg-white"
-            iconColor="text-orange-600"
+            iconColor="text-orange-500"
           />
-
           <StatCard
             title="เดือนนี้"
             value={thisMonth}
             icon={Calendar}
             bgColor="bg-white"
-            iconColor="text-purple-600"
+            iconColor="text-purple-500"
           />
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Recent Assessments - ขยายให้เต็มความกว้าง */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg border border-slate-200  p-6">
-              <h2 className="text-lg font-semibold text-slate-800 mb-6">
-                การประเมินล่าสุดในห้อง {currentClassroom.name}
-              </h2>
-
-              {classroomAssessments.length === 0 ? (
-                <div className="text-center py-12">
-                  <ClipboardList className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-500 text-lg mb-2">ยังไม่มีการประเมินในห้องนี้</p>
-                  <p className="text-slate-400 text-sm">เริ่มต้นด้วยการเพิ่มนักเรียนและทำการประเมิน</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Assessments */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">การประเมินล่าสุด</h3>
+              
+              {recentAssessments.length > 0 ? (
+                <div className="space-y-3">
                   {recentAssessments.map((assessment) => (
-                    <div
-                      key={assessment.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors duration-200"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-slate-800 mb-1">{assessment.studentName}</p>
-                        <p className="text-sm text-slate-600">
-                          {new Date(assessment.completedDate || '').toLocaleDateString('th-TH', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </p>
+                    <div key={assessment.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-medium">
+                          {assessment.studentName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-800">{assessment.studentName}</p>
+                          <p className="text-sm text-slate-500">
+                            {new Date(assessment.completedDate || assessment.date).toLocaleDateString('th-TH')}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-left sm:text-right flex-shrink-0 mt-3 sm:mt-0">
-                        <p className="text-sm font-medium text-slate-700 mb-2">
-                          คะแนนรวม: {assessment.scores?.totalDifficulties}
-                        </p>
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${assessment.interpretations?.totalDifficulties === 'ปกติ' ? 'bg-green-100 text-green-800' :
-                          assessment.interpretations?.totalDifficulties === 'เส่ียง' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                          {assessment.interpretations?.totalDifficulties}
-                        </span>
-                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        assessment.interpretations?.totalDifficulties === 'ปกติ' ? 'bg-green-100 text-green-800' :
+                        assessment.interpretations?.totalDifficulties === 'เสี่ยง' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {assessment.interpretations?.totalDifficulties}
+                      </span>
                     </div>
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-500">
+                  <ClipboardList className="h-12 w-12 mx-auto mb-4 text-slate-400" />
+                  <p>ยังไม่มีการประเมิน</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Action Buttons - ลดขนาดลง */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg border border-slate-200  p-6">
+          {/* Action Buttons */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Main Actions */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-4">
                 การจัดการ
               </h3>
@@ -191,6 +181,28 @@ const Dashboard: React.FC = () => {
                   <PieChart className="h-5 w-5" />
                   รายงานสรุป
                 </button>
+              </div>
+            </div>
+
+            {/* Tools Section */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                🛠 เครื่องมือ
+              </h3>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={cleanupDuplicateAssessments}
+                  className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 text-sm font-medium cursor-pointer"
+                  title="ลบแบบประเมินที่ซ้ำซ้อนหรือไม่จำเป็น"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  ทำความสะอาดข้อมูล
+                </button>
+                
+                <p className="text-xs text-slate-500 text-center">
+                  ลบแบบประเมินที่ซ้ำซ้อนหรือไม่สมบูรณ์
+                </p>
               </div>
             </div>
           </div>
