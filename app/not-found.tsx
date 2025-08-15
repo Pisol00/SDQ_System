@@ -3,11 +3,11 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Home, Users, ClipboardList, AlertTriangle, ArrowLeft } from 'lucide-react';
-import { useApp } from '@/contexts/AppContext'; // ✅ เพิ่ม import
+import { useApp } from '@/contexts/AppContext'; // ✅ ใช้ context
 
 const NotFoundPage: React.FC = () => {
   const router = useRouter();
-  const { setHideNavigation } = useApp(); // ✅ ใช้ context
+  const { setHideNavigation } = useApp(); // ✅ ใช้ context เพื่อซ่อน nav
 
   // ✅ ซ่อน navigation เมื่อเข้าหน้า 404
   useEffect(() => {
