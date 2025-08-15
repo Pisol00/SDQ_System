@@ -100,6 +100,10 @@ interface AppContextType {
   showClassroomDialog: boolean;
   showClassroomDropdown: boolean;
 
+  hideNavigation: boolean;
+  setHideNavigation: (hide: boolean) => void;
+
+
   // Assessment Management Functions
   getOrCreateAssessment: (student: Student) => Assessment;
   getAssessmentByStudentId: (studentId: number) => Assessment | null;
@@ -177,6 +181,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [showClassroomDialog, setShowClassroomDialog] = useState(false);
   const [showClassroomDropdown, setShowClassroomDropdown] = useState(false);
 
+  const [hideNavigation, setHideNavigation] = useState<boolean>(false);
+
   // Load data from localStorage on mount
   useEffect(() => {
     const savedClassrooms = localStorage.getItem('sdq-classrooms');
@@ -244,7 +250,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (!existingAssessment) {
       // สร้าง assessment ใหม่
       createdAssessments.current.add(student.id);
-      
+
       existingAssessment = {
         id: Date.now() + Math.random(),
         studentId: student.id,
@@ -257,7 +263,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       };
 
       setAssessments(prev => [...prev, existingAssessment!]);
-      
+
       // เคลียร์หลังจากสร้างเสร็จ
       setTimeout(() => {
         createdAssessments.current.delete(student.id);
@@ -279,12 +285,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const completedAssessments = assessments.filter(a =>
       a.studentId === studentId && a.completed
     );
-    
+
     if (completedAssessments.length === 0) return null;
-    
+
     // ส่งกลับ assessment ล่าสุด
-    return completedAssessments.sort((a, b) => 
-      new Date(b.completedDate || b.date).getTime() - 
+    return completedAssessments.sort((a, b) =>
+      new Date(b.completedDate || b.date).getTime() -
       new Date(a.completedDate || a.date).getTime()
     )[0];
   };
@@ -293,7 +299,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const getStudentAssessmentStatus = (studentId: number): 'completed' | 'in-progress' | 'not-started' => {
     const hasCompleted = assessments.some(a => a.studentId === studentId && a.completed);
     const hasInProgress = assessments.some(a => a.studentId === studentId && !a.completed);
-    
+
     if (hasCompleted) return 'completed';
     if (hasInProgress) return 'in-progress';
     return 'not-started';
@@ -498,6 +504,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addAssessment, // ✅ เพิ่ม
     updateAssessment,
 
+    hideNavigation,
+    setHideNavigation,
+
     // Actions
     setCurrentClassroom,
     addClassroom,
@@ -514,7 +523,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setShowImportDialog,
     setShowClassroomDialog,
     setShowClassroomDropdown,
-    
+
     // Helper Functions
     getCurrentClassroom,
     getClassroomStudents,
